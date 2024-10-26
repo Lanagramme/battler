@@ -36,7 +36,7 @@ class Cell:
   def draw(self, SCREEN, pion_color):
     self.color = self.def_color()
     pygame.draw.rect(SCREEN, self.color, self.body)
-    if self.pion:
+    if self.pion != None:
       pygame.draw.circle(
         SCREEN,
         pion_color,
@@ -56,17 +56,18 @@ class Grid:
     self.spanX = width * (size + gutter)
     self.spanY = height * (size + gutter)
 
-    self.cells = [[Cell(x, y, margin, gutter, size, False, False, False) for y in range(height)] for x in range(width)]
+    self.cells = [[Cell(x, y, margin, gutter, size, False, False, None) for y in range(height)] for x in range(width)]
     self.hover = False
     self.active = (None, None)
 
-    self.turn = 'team1'
-
-  def next_turn(self):
-    self.turn = "team2" if self.turn == "team1" else "team1"
-  
   def activate(self, x, y):
-    self.active = (x, y)
+    if x == None:
+      self.active = (x, y)
+    else:
+      pion = self.cells[x][y].pion
+      if pion != None:
+        if battle.LIST_PIONS[pion].team == battle.turn:
+          self.active = (x, y)
 
   def paint(self, SCREEN):
     for x in range(self.X):
@@ -75,8 +76,8 @@ class Grid:
         cell.hover = True if (x, y) == self.hover else False
         cell.active = True if (x, y) == self.active else False
         pion_color = (
-          TEAMS[LIST_PIONS[cell.pion].team]["color"]
-          if cell.pion
+          battle.TEAMS[battle.LIST_PIONS[cell.pion].team]["color"]
+          if cell.pion != None
           else None
         )
         cell.draw(SCREEN, pion_color)
@@ -86,6 +87,37 @@ class Grid:
       int((mouse_x - self.margin) / (self.size + self.gutter)),
       int((mouse_y - self.margin) / (self.size + self.gutter))
     )
+
+class Battle:
+  def __init__(self ):
+    self.turn = 'team1'
+    self.LIST_PIONS = []
+    self.TEAMS = {
+      "team1": {"color": PURPLE, "pions": []},
+      "team2": {"color": CARMIN, "pions": []},
+    }
+
+  def next_turn(self):
+    self.turn = "team2" if self.turn == "team1" else "team1"
+  
+  def create(self, team, GX, GY):
+    while True:
+      X = randrange(GX)
+      Y = randrange(GY)
+      nouveau_pion = Pion(team, (X, Y))
+      if grid.cells[X][Y].pion == None:
+        break
+
+    grid.cells[X][Y].pion = len(self.LIST_PIONS)
+    self.LIST_PIONS.append(nouveau_pion)
+
+  def start(self, GX, GY):
+    self.create('team1', GX, GY)
+    self.create('team1', GX, GY)
+    self.create('team1', GX, GY)
+    self.create('team2', GX, GY)
+    self.create('team2', GX, GY)
+    self.create('team2', GX, GY)
 
 class Game:
   def __init__(self, grid):
@@ -126,16 +158,6 @@ class Game:
     self.grid.paint(SCREEN)
 
 # FUNCTIONS
-def create(team):
-  while True:
-    X = randrange(grid.X)
-    Y = randrange(grid.Y)
-    nouveau_pion = Pion(team, (X, Y))
-    if grid.cells[X][Y].pion is False:
-      break
-
-  grid.cells[X][Y].pion = len(LIST_PIONS)
-  LIST_PIONS.append(nouveau_pion)
 
 # CONSTANTS
 WHITE = (255, 241, 215)
@@ -156,6 +178,9 @@ ROWS = 6
 
 grid = Grid(COLLS, ROWS, MARGIN, GUTTER, CELL_SIZE)
 board = pygame.Rect(grid.margin, grid.margin, grid.spanX, grid.spanY)
+battle = Battle()
+battle.start(grid.X, grid.Y)
+
 
 pygame.init()
 pygame.time.Clock().tick(60)
@@ -164,19 +189,6 @@ HEIGHT = grid.margin * 2 + grid.spanY
 WIDTH = grid.margin * 2 + grid.spanX
 SIZE = (WIDTH, HEIGHT)
 SCREEN = pygame.display.set_mode(SIZE)
-
-LIST_PIONS = []
-TEAMS = {
-  "team1": {"color": PURPLE, "pions": []},
-  "team2": {"color": CARMIN, "pions": []},
-}
-
-create("team1")
-create("team1")
-create("team1")
-create("team2")
-create("team2")
-create("team2")
 
 # Game state
 game = Game(grid)
