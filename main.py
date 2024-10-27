@@ -3,15 +3,40 @@ from random import randrange
 
 pygame.font.init()
 
+# CONSTANTS
+WHITE = (255, 241, 215)
+BLUE = (93, 100, 190)
+GREEN = (44, 199, 33)
+
+ACTIVE = (220, 164, 183)
+
+ORANGE = (250, 170, 117)
+RED = (255, 41, 38)
+DARK = (245, 121, 85)
+
+PURPLE = (125, 82, 222)
+CARMIN = (120, 227, 253)
+
+DARK_BLUE = (0, 100, 200)
+BLACK = (0, 0, 0)
+
+MARGIN = {"top": 100, "left":50, "bottom": 100}
+GUTTER = 1
+CELL_SIZE = 50
+COLLS = 13
+ROWS = 9
+
 # CLASSES
 class Pion:
-  def __init__(self, team, position):
+  def __init__(self, team, position, character):
     self.team = team
     self.position = position
+    self.character = character
 
 
 class Cell:
   def __init__(self, x, y, margin, gutter, size, hover, active, pion):
+    self.area = False
     self.x = x
     self.y = y
     self.padding = 5
@@ -28,9 +53,11 @@ class Cell:
     )
 
   def def_color(self):
-    if self.hover: return DARK
-    elif self.active: return BLUE
-    else: return RED
+    if self.hover   : return DARK
+    elif self.active: return ACTIVE
+    elif self.area == "move"  : return GREEN
+    elif self.area == "attack": return RED
+    else: return ORANGE
 
   def draw(self, SCREEN, pion_color):
     self.color = self.def_color()
@@ -53,6 +80,8 @@ class Grid:
     self.spanX = width * (size + gutter)
     self.spanY = height * (size + gutter)
 
+    self.aoe = {}
+
     self.cells = [
       [Cell(x, y, margin, gutter, size, False, False, None) 
       for y in range(height)] 
@@ -62,24 +91,15 @@ class Grid:
     self.active = False
 
   def activate(self, x, y, battle):
-    # remove active if clicked outside board
-    if x == None:
-      if self.active: self.active.active = False
-      self.active = False
-    else:
-      target = self.cells[x][y]
-      if self.active is not False:
-        self.active.active = False
-        self.active= False
-      # only select pion if turn
-      if (target.pion != None 
-          and battle.LIST_PIONS[target.pion].team == battle.turn):
-        self.active = target
-        self.active.active = True
-        battle.moving = True
-      else:
-        return
-      pion = target.pion
+    clean_active()
+    target = self.cells[x][y]
+    if (target.pion != None and battle.LIST_PIONS[target.pion].team == battle.turn):
+      pion = battle.LIST_PIONS[target.pion]
+      pion.character.animation.idle = False
+      self.active = target
+      self.active.active = True
+      clean_aoe()
+
   def move(self, x,y):
     if self.active is False:
       return True
@@ -92,11 +112,17 @@ class Grid:
         # change active pion if destination is same team
         if battle.LIST_PIONS[ destination.pion ].team == battle.turn: return True
         return False
-      destination.pion = self.active.pion
-      self.active.active = False
-      self.active.pion = None
-      self.active = False
-      return False
+      if destination.area == "move":
+        destination.pion = self.active.pion
+        battle.LIST_PIONS[self.active.pion].position = (x, y)
+        destination.active = True
+        self.active.active = False
+        self.active.pion = None
+        self.active = destination
+        clean_aoe()
+        return False
+      clean_active()
+      clean_aoe()
 
   def paint(self, SCREEN):
     for x in range(self.X):
@@ -109,6 +135,16 @@ class Grid:
           else None
         )
         cell.draw(SCREEN, pion_color)
+
+    for pion in battle.LIST_PIONS:
+      if pion.character != False:
+        if pion.character.animation.idle != True:
+          pion.character.animation.update()
+        cell = grid.cells[pion.position[0]][pion.position[1]]
+        SCREEN.blit(
+          pion.character.sprite['bottom'][pion.character.animation.current_frame], 
+          (cell.body.centerx - (pion.character.width / 2), cell.body.centery - 20 - (pion.character.width / 2))
+        )
 
   def get_hovered_cell(self, mouse_x, mouse_y):
     return (
@@ -127,32 +163,25 @@ class Battle:
     self.moving = False
 
   def next_turn(self):
+    clean_active()
+    clean_aoe()
     self.turn = "Team 2" if self.turn == "Team 1" else "Team 1"
-    if grid.active is not False:
-      grid.active.active = False
-    grid.active = False
     title.set_text(self.turn)
     title.set_color(self.TEAMS[self.turn]["color"])
 
   
-  def create(self, team, GX, GY):
+  def create(self, team, GX, GY, character):
     while True:
       X = randrange(GX)
       Y = randrange(GY)
-      nouveau_pion = Pion(team, (X, Y))
+      nouveau_pion = Pion(team, (X, Y), character)
       if grid.cells[X][Y].pion == None:
         break
 
     grid.cells[X][Y].pion = len(self.LIST_PIONS)
     self.LIST_PIONS.append(nouveau_pion)
 
-  def start(self, GX, GY, title):
-    self.create('Team 1', GX, GY)
-    self.create('Team 1', GX, GY)
-    self.create('Team 1', GX, GY)
-    self.create('Team 2', GX, GY)
-    self.create('Team 2', GX, GY)
-    self.create('Team 2', GX, GY)
+  def start(self, GX, GY):
     title.set_text(self.turn)
     title.set_color(self.TEAMS[self.turn]["color"])
 
@@ -191,7 +220,6 @@ class Game:
       grid.hover = (None, None)
       if clic and not self.clicking:
         self.clicking = True
-        grid.activate(None, None, battle)
 
 
   def render(self):
@@ -228,33 +256,36 @@ class Banner:
     # Blit the text to the screen
     SCREEN.blit(text_surface, rect)
 
+def get_sprite(sprite_sheet, row, col, width, height):
+  sprite = pygame.Surface((width, height), pygame.SRCALPHA)
+  sprite.blit(sprite_sheet, (0, 0), (col * width, row * height, width, height))
+  sprite.set_colorkey((255,255,255))
+  return sprite
+
+def sprite_asset(cols, rows, path, directions, width, height):
+  sprite_sheet = pygame.image.load(path)
+  sheet_width, sheet_height = sprite_sheet.get_size()
+  sprite_width = sheet_width // cols
+  sprite_height = sheet_height // cols
+  
+  sprites = {"top": [], "bottom": [], 'left': [], "right": []}
+  sprites['steps'] = cols 
+ 
+  row = 0
+  for direction in  directions:
+    for col in range(cols):
+      sprite = get_sprite(sprite_sheet, row, col, sprite_width, sprite_height)
+      sprite = pygame.transform.scale(sprite, (width, height))
+      sprites[direction].append(sprite)
+    row = row +1
+      
+  return sprites
+
+
 # FUNCTIONS
-
-# CONSTANTS
-WHITE = (255, 241, 215)
-BLUE = (93, 100, 190)
-GREEN = (0, 255, 0)
-
-RED = (250, 170, 117)
-DARK = (245, 121, 85)
-
-PURPLE = (125, 82, 222)
-CARMIN = (120, 227, 253)
-
-DARK_BLUE = (0, 100, 200)
-BLACK = (0, 0, 0)
-
-MARGIN = {"top": 100, "left":50, "bottom": 100}
-GUTTER = 1
-CELL_SIZE = 50
-COLLS = 9
-ROWS = 6
-
 grid = Grid(COLLS, ROWS, MARGIN, GUTTER, CELL_SIZE)
 board = pygame.Rect(grid.margin['left'], grid.margin["top"], grid.spanX, grid.spanY)
 title = Banner(15,BLACK)
-battle = Battle()
-battle.start(grid.X, grid.Y, title)
 
 
 pygame.init()
@@ -265,7 +296,41 @@ WIDTH = grid.margin['left'] * 2 + grid.spanX
 SIZE = (WIDTH, HEIGHT)
 SCREEN = pygame.display.set_mode(SIZE)
 
+class AnimatedSprite:
+  def __init__(self, sprite):
+    self.parent = sprite
+    self.frames = sprite.sprite
+    self.animation_speed = 200
+    self.current_frame = 0
+    self.last_update = pygame.time.get_ticks()
+    self.idle = True
+
+  def set_idle(self):
+    self.idle = True
+    self.current_frame = 0
+      
+  def update(self):
+    if self.idle == True:
+      return
+    now = pygame.time.get_ticks()
+
+    if now - self.last_update > self.animation_speed:
+      self.last_update = now
+      self.current_frame = (self.current_frame + 1) % self.parent.steps
+
 # Game state
+class Character:
+  def __init__(self, name, hp, steps, moves, sprite_sheet, directions, width, height):
+    self.name = name
+    self.hp = hp
+    self.moves = moves
+    self.max_moves = moves
+    self.sprite = sprite_asset(steps, 4, sprite_sheet, directions, width, height)
+    self.width = width
+    self.height = height
+    self.animation = AnimatedSprite(self)
+    self.steps = steps
+
 class Button:
   def __init__(self, x, y, width, height, text, color, hover_color, text_color, font_size, action=None):
     self.rect = pygame.Rect(x, y, width, height)
@@ -295,22 +360,111 @@ class Button:
       if self.action:
         self.action()
 
-def on_button_click():
+def next_turn():
   battle.next_turn()
   print(f"Turn changed to {battle.turn}")
 
 def nothing():
   return
 
+def neighbors(cell):
+  newarea = set([cell])
+  newarea.add(cell)
+  cells =  grid.cells
+
+  X, Y = cell.x, cell.y
+
+  if Y-1 != -1:
+    top    = cells[X][Y-1]
+    newarea.add(top)
+
+  if Y+1 != grid.Y:
+    bottom = cells[X][Y+1]
+    newarea.add(bottom)
+
+  if X-1 != -1:
+    left   = cells[X-1][Y]
+    newarea.add(left)
+    
+  if X+1 != grid.X:
+    right  = cells[X+1][Y]
+    newarea.add(right)
+
+  return newarea
+
+def aoe(origin, type, radius):
+  clean_aoe()
+
+  battle.moving = True
+  if grid.active is False: return
+
+  cells =  grid.cells
+  area = set([origin])
+  queue = [(origin, 0)]
+  visited = []
+
+  while queue:
+    cell, distance = queue.pop(0)
+
+    around = neighbors(cell)
+    for neighbor in around:
+      if neighbor not in visited:
+        visited.append(neighbor)
+
+      if distance  < radius:
+        queue.append((neighbor, distance+1))
+        area.add(neighbor)
+
+  grid.aoe = area
+  for cell in grid.aoe:
+    cell.area = type
+
+def aoe_attack():
+  if grid.active is not False:
+    aoe(grid.active, "attack", 3)
+
+def aoe_move():
+  if grid.active is not False:
+    character = battle.LIST_PIONS[ grid.active.pion ].character
+    distance = character.moves
+    character.animation.update()
+    aoe(grid.active, "move", distance)
+
+def clean_aoe():
+  if grid.aoe != False:
+    for cell in grid.aoe:
+      cell.area = False
+    grid.aoe = False
+    
+
+def clean_active():
+  if grid.active != False:
+    battle.LIST_PIONS[grid.active.pion].character.animation.set_idle()
+    grid.active.active = False
+    grid.active = False
 
 # Button settings
-button = Button(15, 15, 100, 50, "Turn", BLUE, DARK_BLUE, BLACK, 36, action=on_button_click)
-move = Button(15, HEIGHT-70 , 100, 50, "Move", BLUE, DARK_BLUE, BLACK, 36, action=nothing)
-attack = Button(30 + 100, HEIGHT-70 , 100, 50, "Attack", BLUE, DARK_BLUE, BLACK, 36, action=nothing)
+button = Button(15, 15, 100, 50, "Turn", BLUE, DARK_BLUE, BLACK, 36, action=next_turn)
+move = Button(15, HEIGHT-70 , 100, 50, "Move", BLUE, DARK_BLUE, BLACK, 36, action=aoe_move)
+attack = Button(30 + 100, HEIGHT-70 , 100, 50, "Attack", BLUE, DARK_BLUE, BLACK, 36, action=aoe_attack)
 
 buttons = [button, move, attack]
 ui = [button, move, attack, title]
 
+# Characters
+Lance = Character('Lance', 12, 4, 5, './sprite_sheet/silver.png', ["bottom", "left", "right", "top"], 60, 60)
+Touko = Character('Touko', 12, 4, 4, './sprite_sheet/past.png', ["bottom", "left", "right", "top"], 60, 60)
+Azure = Character('Azure', 12, 4, 3, './sprite_sheet/azure.jpg', ["bottom", "left", "right", "top"], 60, 60)
+Girl  = Character('Girl', 12, 4, 3, './sprite_sheet/girl.png', ["bottom", "left", "right", "top"], 60, 60)
+
+battle = Battle()
+battle.create('Team 1', grid.X, grid.Y, Girl)
+battle.create('Team 1', grid.X, grid.Y, Lance)
+battle.create('Team 1', grid.X, grid.Y, Touko)
+battle.create('Team 2', grid.X, grid.Y, False)
+battle.create('Team 2', grid.X, grid.Y, False)
+battle.create('Team 2', grid.X, grid.Y, False)
+battle.start(grid.X, grid.Y)
 
 game = Game(grid)
 game.run()
