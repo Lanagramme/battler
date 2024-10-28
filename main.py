@@ -103,26 +103,26 @@ class Grid:
   def move(self, x,y):
     if self.active is False:
       return True
-    else:
-      destination = self.cells[x][y]
-      if x == self.active.x and y == self.active.y:
-        return False
-      # Only move to empty case
-      if destination.pion != None:
-        # change active pion if destination is same team
-        if battle.LIST_PIONS[ destination.pion ].team == battle.turn: return True
-        return False
-      if destination.area == "move":
-        destination.pion = self.active.pion
-        battle.LIST_PIONS[self.active.pion].position = (x, y)
-        destination.active = True
-        self.active.active = False
-        self.active.pion = None
-        self.active = destination
-        clean_aoe()
-        return False
-      clean_active()
+    
+    destination = self.cells[x][y]
+    if x == self.active.x and y == self.active.y:
+      return False
+    # Only move to empty case
+    if destination.pion != None:
+      # change active pion if destination is same team
+      if battle.LIST_PIONS[ destination.pion ].team == battle.turn: return True
+      return False
+    if destination.area == "move":
+      destination.pion = self.active.pion
+      battle.LIST_PIONS[self.active.pion].position = (x, y)
+      destination.active = True
+      self.active.active = False
+      self.active.pion = None
+      self.active = destination
       clean_aoe()
+      return False
+    clean_active()
+    clean_aoe()
 
   def paint(self, SCREEN):
     for x in range(self.X):
