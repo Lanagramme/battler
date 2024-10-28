@@ -170,13 +170,17 @@ class Battle:
     title.set_color(self.TEAMS[self.turn]["color"])
 
   
-  def create(self, team, GX, GY, character):
-    while True:
-      X = randrange(GX)
-      Y = randrange(GY)
-      nouveau_pion = Pion(team, (X, Y), character)
-      if grid.cells[X][Y].pion == None:
-        break
+  def create(self, team, type, coord, character):
+    if type == "random":
+      while True:
+        X = randrange(coord[0])
+        Y = randrange(coord[1])
+        nouveau_pion = Pion(team, (X, Y), character)
+        if grid.cells[X][Y].pion == None:
+          break
+    else:
+      nouveau_pion =  Pion(team, coord, character)
+      X, Y = coord
 
     grid.cells[X][Y].pion = len(self.LIST_PIONS)
     self.LIST_PIONS.append(nouveau_pion)
@@ -362,7 +366,6 @@ class Button:
 
 def next_turn():
   battle.next_turn()
-  print(f"Turn changed to {battle.turn}")
 
 def nothing():
   return
@@ -461,12 +464,12 @@ Demo1  = Character('Demo', 12, 4, 3, './sprite_sheet/Demo_sprite2.png', ["bottom
 Demo2  = Character('Demo', 12, 4, 3, './sprite_sheet/Demo_sprite2.png', ["bottom", "left", "right", "top"], 34, 40)
 
 battle = Battle()
-battle.create('Team 1', grid.X, grid.Y, Girl)
-battle.create('Team 1', grid.X, grid.Y, Lance)
-battle.create('Team 1', grid.X, grid.Y, Touko)
-battle.create('Team 2', grid.X, grid.Y, Demo)
-battle.create('Team 2', grid.X, grid.Y, Demo2)
-battle.create('Team 2', grid.X, grid.Y, Demo1)
+battle.create('Team 2', "fix", (11, 2), Demo)
+battle.create('Team 2', "fix", (11, 4), Demo2)
+battle.create('Team 2', "fix", (11, 6), Demo1)
+battle.create('Team 1', "random", ( 3,grid.Y ) , Girl)
+battle.create('Team 1', "random", ( 3,grid.Y ) , Lance)
+battle.create('Team 1', "random", ( 3,grid.Y ) , Touko)
 battle.start(grid.X, grid.Y)
 
 game = Game(grid)
