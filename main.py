@@ -33,6 +33,10 @@ class Pion:
     self.position = position
     self.character = character
 
+  def move(self, destination):
+    self.character.moves = self.character.moves - (abs(self.position[0] - destination.x) + abs(self.position[1] - destination.y) )
+    origin = grid.cells[self.position[0]][self.position[1]]
+    grid.move(origin, destination)
 
 class Cell:
   def __init__(self, x, y, margin, gutter, size, hover, active, pion):
@@ -51,6 +55,8 @@ class Cell:
       (margin['left'] + x * (size + gutter), margin["top"] + y * (size + gutter)),
       self.dimensions,
     )
+  def coords(self):
+    return ( self.x,self.y )
 
   def def_color(self):
     if self.hover   : return DARK
@@ -98,31 +104,20 @@ class Grid:
       pion.character.animation.idle = False
       self.active = target
       self.active.active = True
+      ui.set_character( pion.character )
       clean_aoe()
 
-  def move(self, x,y):
-    if self.active is False:
-      return True
-    
-    destination = self.cells[x][y]
-    if x == self.active.x and y == self.active.y:
-      return False
-    # Only move to empty case
-    if destination.pion != None:
-      # change active pion if destination is same team
-      if battle.LIST_PIONS[ destination.pion ].team == battle.turn: return True
-      return False
-    if destination.area == "move":
-      destination.pion = self.active.pion
-      battle.LIST_PIONS[self.active.pion].position = (x, y)
-      destination.active = True
-      self.active.active = False
-      self.active.pion = None
-      self.active = destination
-      clean_aoe()
-      return False
-    clean_active()
+  def move(self, origin,destination):
+    pion = origin.pion
+    destination.pion = pion
+    battle.LIST_PIONS[pion].position = destination.coords()
+    destination.active = True
+    origin.active = False
+    origin.pion = None
+    self.active = destination
     clean_aoe()
+    ui.set_character( battle.LIST_PIONS[pion].character )
+    battle.moving = False
 
   def paint(self, SCREEN):
     for x in range(self.X):
@@ -161,13 +156,16 @@ class Battle:
       "Team 2": {"color": CARMIN, "pions": []},
     }
     self.moving = False
+    self.attacking = False
 
   def next_turn(self):
     clean_active()
     clean_aoe()
     self.turn = "Team 2" if self.turn == "Team 1" else "Team 1"
-    title.set_text(self.turn)
-    title.set_color(self.TEAMS[self.turn]["color"])
+    ui.title.set_text(self.turn)
+    ui.title.set_color(self.TEAMS[self.turn]["color"])
+    for pion in self.TEAMS[self.turn][ "pions" ]:
+      pion.character.moves = pion.character.max_moves
 
   
   def create(self, team, type, coord, character):
@@ -184,10 +182,11 @@ class Battle:
 
     grid.cells[X][Y].pion = len(self.LIST_PIONS)
     self.LIST_PIONS.append(nouveau_pion)
+    self.TEAMS[team]["pions"].append(nouveau_pion)
 
   def start(self, GX, GY):
-    title.set_text(self.turn)
-    title.set_color(self.TEAMS[self.turn]["color"])
+    ui.title.set_text(self.turn)
+    ui.title.set_color(self.TEAMS[self.turn]["color"])
 
 class Game:
   def __init__(self, grid):
@@ -205,8 +204,15 @@ class Game:
     for event in pygame.event.get():
       if event.type == pygame.QUIT:
         self.playing = False
-      for button in buttons:
-        button.handle_event(event)
+      if battle.attacking:
+        for button in ui.attack_buttons:
+          button.handle_event(event)
+      elif battle.moving:
+          ui.cancel_btn.handle_event(event)
+      else:
+        for button in ui.character_buttons:
+          button.handle_event(event)
+      ui.turn_button.handle_event(event)
 
     mouse_x, mouse_y = mouse_pos = pygame.mouse.get_pos()
     clic, _, _ = pygame.mouse.get_pressed(num_buttons=3)
@@ -218,19 +224,34 @@ class Game:
       grid.hover = grid.get_hovered_cell(mouse_x, mouse_y)
       if clic and not self.clicking:
         self.clicking = True
-        if grid.move(grid.hover[0], grid.hover[1]):
-          grid.activate(grid.hover[0], grid.hover[1], battle)
+        
+        x, y = grid.hover
+        hover_cell = grid.cells[x][y]
+        hover_pion = battle.LIST_PIONS[hover_cell.pion] if hover_cell.pion != None else None
+        
+        if hover_cell.area == "attack":
+          # attaquer ici
+          battle.attacking = False
+          return
+        if hover_pion is not None and hover_pion.team == battle.turn:
+          grid.activate(x, y, battle)
+          battle.moving = False
+
+        elif hover_pion is None:
+          if hover_cell.area == "move":
+            battle.LIST_PIONS[grid.active.pion].move(grid.cells[x][y])
+          else : 
+            clean_aoe()
+            clean_active()
     else:
       grid.hover = (None, None)
       if clic and not self.clicking:
         self.clicking = True
 
-
   def render(self):
     SCREEN.fill(WHITE)
     self.grid.paint(SCREEN)
-    for asset in ui:
-      asset.draw(SCREEN)
+    ui.draw()
 
 class Banner:
   def __init__(self, x, color):
@@ -293,6 +314,7 @@ title = Banner(15,BLACK)
 
 
 pygame.init()
+pygame.display.set_caption("Battler")
 pygame.time.Clock().tick(60)
 
 HEIGHT = grid.margin["top"] + grid.margin["bottom"] + grid.spanY
@@ -324,9 +346,11 @@ class AnimatedSprite:
 
 # Game state
 class Character:
-  def __init__(self, name, hp, steps, moves, sprite_sheet, directions, width, height):
+  def __init__(self, name, hp, steps, moves, sprite_sheet, spells, directions, width, height):
     self.name = name
+    self.spells = spells
     self.hp = hp
+    self.max_hp = hp
     self.moves = moves
     self.max_moves = moves
     self.sprite = sprite_asset(steps, 4, sprite_sheet, directions, width, height)
@@ -334,6 +358,80 @@ class Character:
     self.height = height
     self.animation = AnimatedSprite(self)
     self.steps = steps
+
+class Ui:
+  def __init__(self, title):
+    self.font = pygame.font.Font(None, 30)
+    self.title = title
+    
+    self.character = False
+    self.turn_button = Button(WIDTH - 15 - 100, 15, 100, 50, "Turn", BLUE, DARK_BLUE, BLACK, 36, action=next_turn)
+    self.character_buttons = []
+    self.attack_buttons = []
+
+    self.cancel_btn = Button(155, HEIGHT-70, 100, 50, "Cancel", BLUE, DARK_BLUE, BLACK, 36, action=self.cancel_menu)
+
+  def cancel_menu(x):
+    clean_aoe()
+    battle.moving = False
+    battle.attacking = False
+    
+  def set_character(self,character):
+    self.character_buttons.clear()
+    self.attack_buttons.clear()
+    elements = []
+
+    height = grid.spanY + 105
+    margin = grid.margin['left']
+    
+    name = self.font.render(character.name, True, BLACK)
+    elements.append(( name, ( margin,height+10 ) ))
+
+    chp = str(character.hp)
+    mhp = str(character.max_hp)
+    hp =  self.font.render("Hp: " + chp + "/" + mhp, True, BLACK)
+    elements.append(( hp, (margin, height+30) ))
+
+    mv = str(character.moves)
+    mmv = str(character.max_moves)
+    move_info =  self.font.render("Mp: " + mv + "/" + mmv, True, BLACK)
+    elements.append(( move_info, (margin,height+ 55) ))
+    
+    move = Button(155, HEIGHT-70 , 100, 50, "Move", BLUE, DARK_BLUE, BLACK, 36, action=aoe_move)
+    self.character_buttons.append(move)
+
+    attack = Button(170 + 100, HEIGHT-70 , 100, 50, "Attack", BLUE, DARK_BLUE, BLACK, 36, action=aoe_attack)
+    self.character_buttons.append(attack)
+
+    i = 0
+    for spell in character.spells:
+      btn = Button(155  + ( i+1 ) * (100 + 15), HEIGHT-70, 100, 50, spell.name, BLUE, DARK_BLUE, BLACK, 36, action=lambda spell=spell: aoe(grid.active, 'attack', spell.aoe) )
+      self.attack_buttons.append(btn)
+      i = i+1
+
+    def cancel_menu_atk():
+      clean_aoe()
+      battle.attacking = False
+
+    self.attack_buttons.append(self.cancel_btn)
+
+    self.character = elements
+
+    
+  def draw(self):
+    self.title.draw(SCREEN)
+    self.turn_button.draw(SCREEN)
+    if self.character is not False:
+      for element in self.character:
+        SCREEN.blit(element[0],element[1])
+      if battle.attacking == True:
+        for button in self.attack_buttons:
+          button.draw(SCREEN)
+      elif battle.moving == True:
+        self.cancel_btn.draw(SCREEN)
+      else:
+        for button in self.character_buttons:
+          button.draw(SCREEN)
 
 class Button:
   def __init__(self, x, y, width, height, text, color, hover_color, text_color, font_size, action=None):
@@ -363,6 +461,11 @@ class Button:
     if self.is_hovered and event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
       if self.action:
         self.action()
+
+class Spell:
+  def __init__(self, name, aoe):
+    self.name = name
+    self.aoe = aoe
 
 def next_turn():
   battle.next_turn()
@@ -423,8 +526,9 @@ def aoe(origin, type, radius):
     cell.area = type
 
 def aoe_attack():
-  if grid.active is not False:
-    aoe(grid.active, "attack", 3)
+  battle.attacking = True
+  # if grid.active is not False:
+  #   aoe(grid.active, "attack", 3)
 
 def aoe_move():
   if grid.active is not False:
@@ -443,33 +547,38 @@ def clean_aoe():
 def clean_active():
   if grid.active != False:
     battle.LIST_PIONS[grid.active.pion].character.animation.set_idle()
+    battle.attacking = False
+    
     grid.active.active = False
     grid.active = False
 
-# Button settings
-button = Button(15, 15, 100, 50, "Turn", BLUE, DARK_BLUE, BLACK, 36, action=next_turn)
-move = Button(15, HEIGHT-70 , 100, 50, "Move", BLUE, DARK_BLUE, BLACK, 36, action=aoe_move)
-attack = Button(30 + 100, HEIGHT-70 , 100, 50, "Attack", BLUE, DARK_BLUE, BLACK, 36, action=aoe_attack)
+    ui.character = False
+    ui.buttons = []
 
-buttons = [button, move, attack]
-ui = [button, move, attack, title]
+
+ui = Ui(title)
+
+spells = [Spell('Sort 1', 2), Spell("Sort 2", 3), Spell("sort 3", 4) ]
 
 # Characters
-Lance = Character('Lance', 12, 4, 5, './sprite_sheet/silver.png', ["bottom", "left", "right", "top"], 60, 60)
-Touko = Character('Touko', 12, 4, 4, './sprite_sheet/past.png', ["bottom", "left", "right", "top"], 60, 60)
-Azure = Character('Azure', 12, 4, 3, './sprite_sheet/azure.jpg', ["bottom", "left", "right", "top"], 60, 60)
-Girl  = Character('Girl', 12, 4, 3, './sprite_sheet/girl.png', ["bottom", "left", "right", "top"], 60, 60)
-Demo  = Character('Demo', 12, 4, 3, './sprite_sheet/Demo_sprite2.png', ["bottom", "left", "right", "top"], 34, 40)
-Demo1  = Character('Demo', 12, 4, 3, './sprite_sheet/Demo_sprite2.png', ["bottom", "left", "right", "top"], 34, 40)
-Demo2  = Character('Demo', 12, 4, 3, './sprite_sheet/Demo_sprite2.png', ["bottom", "left", "right", "top"], 34, 40)
+Lance = Character('Lance', 12, 4, 5, './sprite_sheet/silver.png', spells, ["bottom", "left", "right", "top"], 60, 60)
+Touko = Character('Touko', 12, 4, 4, './sprite_sheet/past.png', spells, ["bottom", "left", "right", "top"], 60, 60)
+Azure = Character('Azure', 12, 4, 3, './sprite_sheet/azure.jpg', spells, ["bottom", "left", "right", "top"], 60, 60)
+Girl  = Character('Girl', 12, 4, 3, './sprite_sheet/girl.png', spells, ["bottom", "left", "right", "top"], 60, 60)
+Demo  = Character('Demo', 12, 4, 3, './sprite_sheet/Demo_sprite2.png', spells, ["bottom", "left", "right", "top"], 34, 40)
+Demo1 = Character('Demo', 12, 4, 3, './sprite_sheet/Demo_sprite2.png', spells, ["bottom", "left", "right", "top"], 34, 40)
+Demo2 = Character('Demo', 12, 4, 3, './sprite_sheet/Demo_sprite2.png', spells, ["bottom", "left", "right", "top"], 34, 40)
 
 battle = Battle()
 battle.create('Team 2', "fix", (11, 2), Demo)
 battle.create('Team 2', "fix", (11, 4), Demo2)
 battle.create('Team 2', "fix", (11, 6), Demo1)
-battle.create('Team 1', "random", ( 3,grid.Y ) , Girl)
-battle.create('Team 1', "random", ( 3,grid.Y ) , Lance)
-battle.create('Team 1', "random", ( 3,grid.Y ) , Touko)
+# battle.create('Team 1', "random", ( 3,grid.Y ) , Girl)
+# battle.create('Team 1', "random", ( 3,grid.Y ) , Lance)
+# battle.create('Team 1', "random", ( 3,grid.Y ) , Touko)
+battle.create('Team 1', "fix", ( 2,2) , Girl)
+battle.create('Team 1', "fix", ( 2,4 ) , Lance)
+battle.create('Team 1', "fix", ( 2,6 ) , Touko)
 battle.start(grid.X, grid.Y)
 
 game = Game(grid)
