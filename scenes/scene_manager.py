@@ -1,7 +1,7 @@
 import pygame
 from scenes.menu import MenuScene
 from scenes.scene_battle import BattleScene
-from scenes.build_team import TeamSelect
+from scenes.scene_build_team import TeamSelect
 from classes.ui import Ui
 from classes.grid import Grid
 from utils.functions import fade_to_black
