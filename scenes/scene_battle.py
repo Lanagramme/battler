@@ -100,6 +100,7 @@ class BattleScene(Scene):
     self.grid.paint(screen)
     self.ui.draw(screen)
     self.ui.draw_buttons(screen)
+    self.battle.fade_turn_pannel()
 
     pass
 

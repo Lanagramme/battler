@@ -16,7 +16,7 @@ class Ui:
     self.character_buttons = []
     self.attack_buttons = []
 
-    self.cancel_btn = Button(155, HEIGHT-60, 100, 50, "Cancel", colors.BLUE, colors.DARK_BLUE, colors.BLACK, 36, action=lambda: self.cancel_menu(battle))
+    self.cancel_btn = Button(175, HEIGHT-60, 100, 50, "Cancel", colors.BLUE, colors.DARK_BLUE, colors.BLACK, 36, action=lambda: self.cancel_menu(battle))
 
   def set_turn(self, current_turn):
     self.current_turn = Banner(15, colors.BLACK) 
@@ -60,7 +60,7 @@ class Ui:
 
   def create_spell_buttons(self, character, battle, grid):
       for i, spell in enumerate(character.spells):
-          btn = Button(155 + (i + 1) * (100 + 15), HEIGHT - 60, 100, 50, spell["name"], colors.BLUE, colors.DARK_BLUE, colors.BLACK, 36,
+          btn = Button(175 + (i + 1) * (100 + 15), HEIGHT - 60, 100, 50, spell["name"], colors.BLUE, colors.DARK_BLUE, colors.BLACK, 36,
                        action=lambda spell=spell: grid.draw_aoe_from_caster(spell))
           self.attack_buttons.append(btn)
 

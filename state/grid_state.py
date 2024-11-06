@@ -1,8 +1,10 @@
 import pygame
 from data.spells import Spells
 from utils.colors import colors
+from utils.constants import SCREEN
 from classes.grid import Pion
 from classes.character import Character
+from utils.functions import fade_out_surface
 pygame.font.init()
 
 class State():
@@ -17,9 +19,11 @@ class State():
     self.attacking = False
     self.active_spell = False
     self.change_turn = False
+    self.fade_turn_pannel = fade_out_surface(SCREEN, 'Team 1', self.TEAMS[self.turn]["color"])
 
   def next_turn(self):
     self.turn = "Team 2" if self.turn == "Team 1" else "Team 1"
+    self.fade_turn_pannel = fade_out_surface(SCREEN, self.turn, self.TEAMS[self.turn]["color"])
     print(self.TEAMS[self.turn][ "pions" ])
     for pion in self.TEAMS[self.turn][ "pions" ]:
       if pion.character:

@@ -21,7 +21,8 @@ class Pion:
     return self.character.hp
       
 class Cell:
-  def __init__(self, x, y, margin, gutter, size, hover, active, pion):
+  def __init__(self, x, y, margin, gutter, size, hover, active, pion, turn):
+    self.turn = turn
     self.area = False
     self.prev = False
     self.x = x
@@ -53,6 +54,8 @@ class Cell:
     pygame.draw.rect(SCREEN, self.get_color(), self.body)
     if self.pion != None:
       pygame.draw.circle( SCREEN, pion_color, (self.body.centerx, self.body.centery), self.body.width / 2 - self.padding,)
+      if self.pion.team == self.turn.turn:
+        pygame.draw.rect(SCREEN, colors.RED, self.body, 3)
       
 class Grid:
   def __init__(self, width, height, margin, gutter, size, state):
@@ -70,14 +73,14 @@ class Grid:
     self.board = pygame.Rect(self.margin['left'], self.margin["top"], self.spanX, self.spanY)
     # self.board = False
 
+    self.battle = state
     self.cells = [
-      [Cell(x, y, margin, gutter, size, False, False, None) 
+      [Cell(x, y, margin, gutter, size, False, False, None, self.battle) 
       for y in range(height)] 
       for x in range(width)
     ]
     self.hover = False
     self.active = False
-    self.battle = state
     for pion in self.battle.LIST_PIONS:
       x, y = pion.position
       
@@ -116,6 +119,9 @@ class Grid:
     # ui.set_character( battle.LIST_PIONS[pion].character )
     self.battle.moving = False
 
+  def draw_turn_outline(self, cell):
+    pass
+
   def paint(self, SCREEN):
     for x in range(self.X):
       for y in range(self.Y):
@@ -126,6 +132,9 @@ class Grid:
           if cell.pion != None
           else None
         )
+        # if cell.pion and cell.pion.team == self.battle.turn:
+          # self.draw_turn_outline(cell)
+        # gcc
         cell.draw(SCREEN, pion_color)
 
     for pion in self.battle.LIST_PIONS:
@@ -210,6 +219,9 @@ class Grid:
                   neighbor = cells[nx][ny]
 
                   if neighbor not in visited:
+                    if area_type == "move" and neighbor.pion != None:
+                      pass
+                    else:
                       visited.add(neighbor)
                       area.add(neighbor)
                       queue.append((neighbor, distance + 1))  # Add the neighbor to the queue
