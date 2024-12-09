@@ -1,10 +1,13 @@
 import pygame
 from data.spells import Spells
+
 from utils.colors import colors
 from utils.constants import SCREEN
+from utils.functions import fade_out_surface
+
 from classes.grid import Pion
 from classes.character import Character
-from utils.functions import fade_out_surface
+
 pygame.font.init()
 
 class State():
@@ -24,13 +27,11 @@ class State():
   def next_turn(self):
     self.turn = "Team 2" if self.turn == "Team 1" else "Team 1"
     self.fade_turn_pannel = fade_out_surface(SCREEN, self.turn, self.TEAMS[self.turn]["color"])
-    print(self.TEAMS[self.turn][ "pions" ])
     for pion in self.TEAMS[self.turn][ "pions" ]:
       if pion.character:
         if pion.character.hp > 0:
           pion.character.moves = pion.character.max_moves
     self.change_turn = True
-
 
   def setup(self, team):
     for i, member in enumerate(team):
@@ -44,13 +45,20 @@ class State():
       pion = Pion("Team 1", coord, member)
       self.LIST_PIONS.append(pion)
       self.TEAMS["Team 1"]["pions"].append(pion)
-    spells = [Spells["Fireball"], Spells['Water stream']]
-    Demo  = Character('Demo', 12, 4, 3, './sprite_sheet/Demo_sprite2.png', spells, ["bottom", "left", "right", "top"], 34, 40, 5)
+    
+    Demo  = Character(
+      'Demo', 12, 4, 3, 
+      './sprite_sheet/Demo_sprite2.png', 
+      [Spells["Fireball"], Spells['Water stream']], 
+      ["bottom", "left", "right", "top"], 
+      34, 40, 5
+    )
     Demo2 = Demo
     Demo3 = Demo
     Demo2.name = "Demo 2"
     Demo3.name = "Demo 3"
     team2 = [Demo, Demo2, Demo3]
+    
     for i, char in enumerate(team2):
       match i:
         case 0:
@@ -59,6 +67,7 @@ class State():
           coord = (10, 4)
         case 2:
           coord = (10, 6)
+          
       pion = Pion("Team 2", coord, char)
       self.LIST_PIONS.append(pion)
       self.TEAMS['Team 2']["pions"].append(pion) 

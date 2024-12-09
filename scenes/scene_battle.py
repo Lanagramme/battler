@@ -55,8 +55,10 @@ class BattleScene(Scene):
             else:
               target = [hover_cell]
             Spells[self.battle.active_spell]["effect"](target)
+            damage = Spells[self.battle.active_spell]["damage"]
             for cell in target:
               if cell.pion:
+                self.ui.character_info(cell.y, cell.y, colors.RED, "-"+str(damage))
                 if cell.pion.character.hp <= 0:
                   cell.pion.character = False
                   cell.pion = None

@@ -93,5 +93,4 @@ class Game:
 
   def render(self):
     SCREEN.fill(colors.WHITE)
-    self.grid.paint(SCREEN)
     # ui.draw()

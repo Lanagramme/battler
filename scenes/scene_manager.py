@@ -1,16 +1,18 @@
 import pygame
+
 from scenes.menu import MenuScene
 from scenes.scene_battle import BattleScene
 from scenes.scene_build_team import TeamSelect
+
 from classes.ui import Ui
 from classes.grid import Grid
+
 from utils.functions import fade_to_black
-from utils.constants import SIZE, SCREEN, HEIGHT, WIDTH, GUTTER, ROWS, COLLS, SIZE, CELL_SIZE, MARGIN
+from utils.constants import HEIGHT, WIDTH, GUTTER, ROWS, COLLS, CELL_SIZE, MARGIN, SCREEN
 
 class SceneManager:
-  def __init__(self, screen, battle_state):
+  def __init__(self, battle_state):
     self.battle_state = battle_state
-    self.screen = screen
     self.scenes = {
         'menu': MenuScene(),
         'game': TeamSelect(self.battle_state),
@@ -19,7 +21,7 @@ class SceneManager:
     self.current_scene = self.scenes['game']
 
   def switch_scene(self, new_scene_name):
-    fade_to_black(self.screen)
+    fade_to_black(SCREEN)
     self.current_scene = self.scenes[new_scene_name]
 
     if new_scene_name == 'battle':
@@ -40,7 +42,7 @@ class SceneManager:
         self.switch_scene(next_scene)
 
       self.current_scene.update()
-      self.current_scene.render(self.screen)
+      self.current_scene.render(SCREEN)
   
       pygame.display.flip()
       clock.tick(60)
