@@ -118,15 +118,15 @@ class Grid:
       self.clean_aoe()
 
   def move(self, origin,destination):
-    print(destination)
     pion = origin.pion
     destination.pion = pion
     pion.position = destination.coords()
-    destination.active = True
-    origin.active = False
     origin.pion = None
     if origin == self.active:
+      print('isactive')
       self.active = destination
+      origin.active = False
+      destination.active = True
     self.clean_aoe()
     # ui.set_character( battle.LIST_PIONS[pion].character )
     self.battle.moving = False

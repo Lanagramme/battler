@@ -78,15 +78,21 @@ class BattleScene(Scene):
             # apply spell effect and damage
             active_spell["effect"](target, self.grid)
             damage = active_spell["damage"]
+            print(f"Speell => {active_spell['name']}")
 
             # update character ui
+            ######
             for cell in target:
               if cell.pion:
                 self.ui.character_info(cell.y, cell.y, colors.RED, "-"+str(damage))
                 # kill dead characters
-                if cell.pion.character.hp <= 0:
-                  cell.pion.character = False
-                  cell.pion = None
+            for pion in self.battle.LIST_PIONS:
+                print(pion)
+                if pion.character.hp <= 0:
+                  pion.character = False
+                  self.grid.get_cell(*pion.position).pion = None
+                  self.battle.LIST_PIONS.remove(pion)
+                  
                 
           attack_in_progress = False
           self.ui.cancel_menu(self.battle)

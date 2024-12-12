@@ -13,7 +13,7 @@ def Spell(name, reach, aoe, damage, prevision=False, prevision_type="circle"):
 
 def direct_damage(spell, targets):
   for target in targets:
-    if target.pion is not None:
+    if target is not None and target.pion is not None:
       print(spell['name'] + " => " )
       target.pion.loose_pv(spell['damage'])
       print(f"{target.pion.character.name} - {spell['damage']} pv")
@@ -24,11 +24,9 @@ def add_token_to_all_targets(target, element, qte):
       x.pion.character.add_tokens(element, qte)
 
 def Collision(damage, targets): 
-  for target in targets:
-    if not target : continue
-    print('collision => ', target.pion.character.name)
-    print(f"{target.pion.character.name} - {damage} pv")
-    target.pion.loose_pv(damage)
+  spell = {"name":"collision", "damage": damage}
+  direct_damage(spell, targets)
+
       
 def projection(grid, targets, origin, distance, contact_effect=Collision):
   """
