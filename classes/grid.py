@@ -118,6 +118,7 @@ class Grid:
       self.clean_aoe()
 
   def move(self, origin,destination):
+    print(destination)
     pion = origin.pion
     destination.pion = pion
     pion.position = destination.coords()

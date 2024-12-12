@@ -57,7 +57,7 @@ class BattleScene(Scene):
       if hover_cell.area == 'attack':
         active_spell = Spells[self.battle.active_spell]
         if active_spell[ "prevision_aoe" ]:
-          self.grid.draw_aoe(hover_cell, "prev", active_spell[ "prevision_aoe" ], "circle")
+          self.grid.draw_aoe(hover_cell, "prev", active_spell[ "prevision_aoe" ], active_spell["prevision_type"])
       else:
         self.grid.clean_prev()
 
