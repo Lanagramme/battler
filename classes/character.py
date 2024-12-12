@@ -21,7 +21,7 @@ class Character:
     self.tokens[element] = self.tokens[element] + qte
 
   def remove_tokens(self, element, qte):
-    self.tokens[element] = self.tokens[element] - qte
+    self.tokens[element] = self.tokens[element] + qte
 
 class AnimatedSprite:
   def __init__(self, sprite):

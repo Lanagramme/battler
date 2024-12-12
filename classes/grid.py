@@ -19,6 +19,16 @@ class Pion:
   def loose_pv(self, dmg):
     self.character.hp = self.character.hp - dmg
     return self.character.hp
+  
+  def detail(self):
+    print('======')
+    print(f"name: {self.character.name}")
+    print(f"hp: {self.character.max_hp}/{self.character.hp}")
+    print(f"PM: {self.character.max_moves}/{self.character.moves}")
+    print(f"team: {self.team}")
+    print(f"tokens: {self.character.tokens}")
+    print(f"position: {self.position}")
+
       
 class Cell:
   def __init__(self, x, y, margin, gutter, size, hover, active, pion, turn):
@@ -108,14 +118,14 @@ class Grid:
       self.clean_aoe()
 
   def move(self, origin,destination):
-    print(destination)
     pion = origin.pion
     destination.pion = pion
     pion.position = destination.coords()
     destination.active = True
     origin.active = False
     origin.pion = None
-    self.active = destination
+    if origin == self.active:
+      self.active = destination
     self.clean_aoe()
     # ui.set_character( battle.LIST_PIONS[pion].character )
     self.battle.moving = False

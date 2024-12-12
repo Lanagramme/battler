@@ -24,6 +24,7 @@ def add_token_to_all_targets(target, element, qte):
       x.pion.character.add_tokens(element, qte)
 
 def projection(grid, targets, origin, aoe, distance, type="from_origin", contact_effect=False):
+  debug = False
   Targets= {"n":[], "s":[], "e":[], "w":[]}
   for target in targets:
     if target.pion and target.pion.position != origin:
@@ -38,28 +39,43 @@ def projection(grid, targets, origin, aoe, distance, type="from_origin", contact
         else:
           Targets["e"].append(target)
 
+  new_positions = []
+
   for direction in Targets:
     match direction:
       case "n":
         for target in Targets[direction]:
           new_position = (target.pion.position[0], max(target.pion.position[1] - distance, 0)) 
           if target.pion.position != ( new_position[0], new_position[1] ):
-            grid.move(target, grid.get_cell( new_position[0], new_position[1] ))
+            destination = grid.get_cell( new_position[0], new_position[1] )
+            grid.move(target, destination)
+            new_positions.append(destination)
       case "w":
         for target in Targets[direction]:
           new_position = (max(target.pion.position[0] - distance, 0), target.pion.position[1]) 
           if target.pion.position!= ( new_position[0], new_position[1] ):
-            grid.move(target, grid.get_cell( new_position[0], new_position[1] ))
+            destination = grid.get_cell( new_position[0], new_position[1] )
+            grid.move(target, destination)
+            new_positions.append(destination)
       case "s":
         for target in Targets[direction]:
           new_position = (target.pion.position[0], min(target.pion.position[1] + distance, grid.Y-1)) 
           if target.pion.position!= ( new_position[0], new_position[1] ):
-            grid.move(target, grid.get_cell( new_position[0], new_position[1] ))
+            destination = grid.get_cell( new_position[0], new_position[1] )
+            grid.move(target, destination)
+            new_positions.append(destination)
       case "e":
         for target in Targets[direction]:
           new_position = (min(target.pion.position[0] + distance, grid.X-1), target.pion.position[1]) 
           if target.pion.position!= ( new_position[0], new_position[1] ):
-            grid.move(target, grid.get_cell( new_position[0], new_position[1] ))
+            destination = grid.get_cell( new_position[0], new_position[1] )
+            grid.move(target, destination)
+            new_positions.append(destination)
+            
+  for target in new_positions:
+    if target.pion and target.pion.position != origin:
+      target.pion.detail()
+        
 
 # ====== [ Fireball ] ======
 # Cost: 1N
