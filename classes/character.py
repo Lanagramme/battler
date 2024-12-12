@@ -15,6 +15,13 @@ class Character:
     self.steps = steps
     self.offsetx = offsetx
     self.offsety = offsety
+    self.tokens = { "fire": 0, "water": 0, "earth": 0}
+
+  def add_tokens(self, element, qte):
+    self.tokens[element] = self.tokens[element] + qte
+
+  def remove_tokens(self, element, qte):
+    self.tokens[element] = self.tokens[element] - qte
 
 class AnimatedSprite:
   def __init__(self, sprite):

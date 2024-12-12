@@ -108,6 +108,7 @@ class Grid:
       self.clean_aoe()
 
   def move(self, origin,destination):
+    print(destination)
     pion = origin.pion
     destination.pion = pion
     pion.position = destination.coords()
@@ -168,7 +169,7 @@ class Grid:
     if self.aoe != False:
       for cell in self.aoe:
         cell.area = False
-      self.aoe = False
+      self.aoe = {}
       self.battle.moving = False
       self.battle.attacking = False
 
@@ -176,7 +177,7 @@ class Grid:
     if self.prevision_aoe != False:
       for cell in self.prevision_aoe:
         cell.prev = False
-      self.prevision_aoe = False
+      self.prevision_aoe = {}
    
   def clean_active(self):
     if self.active != False:

@@ -7,19 +7,20 @@ from utils.colors import colors
 from utils.constants import WIDTH, HEIGHT
 
 spells = [Spells["Fireball"], Spells['Water stream']]
+spells2 = [Spells["Splash"], Spells['Spark']]
 characters = []
 team = []
 buttons = []
 spots = []
 
-Lance = Character('Lance', 12, 4, 5, './sprite_sheet/silver.png', spells, ["bottom", "left", "right", "top"], 60, 60, -6)
-Scott = Character('Scott', 12, 4, 5, './sprite_sheet/Scott.png', spells, ["bottom", "left", "right", "top"], 60, 60, -6)
-Green = Character('Green', 12, 4, 5, './sprite_sheet/green.png', spells, ["bottom", "left", "right", "top"], 60, 60, -6)
+Touko = Character('Touko',  2, 4, 4, './sprite_sheet/past.png'  , spells, ["bottom", "left", "right", "top"], 60, 60)
+Girl  = Character('Girl' ,  2, 4, 3, './sprite_sheet/girl.png'  , spells, ["bottom", "left", "right", "top"], 60, 60, -3)
+Scott = Character('Scott', 12, 4, 5, './sprite_sheet/Scott.png' , spells, ["bottom", "left", "right", "top"], 60, 60, -6)
+Green = Character('Green', 12, 4, 5, './sprite_sheet/green.png' , spells, ["bottom", "left", "right", "top"], 60, 60, -6)
+Azure = Character('Azure', 12, 4, 3, './sprite_sheet/azure.png' , spells, ["bottom", "left", "right", "top"], 60, 60, -6)
+Lance = Character('Lance', 12, 4, 5, './sprite_sheet/silver.png', spells2, ["bottom", "left", "right", "top"], 60, 60, -6)
+Demo  = Character('Demo' , 12, 4, 3, './sprite_sheet/Demo_sprite2.png', spells, ["bottom", "left", "right", "top"], 34, 40, 5)
 Professor = Character('Professor', 12, 4, 5, './sprite_sheet/professor.png', spells, ["bottom", "left", "right", "top"], 60, 60)
-Touko = Character('Touko', 2, 4, 4, './sprite_sheet/past.png', spells, ["bottom", "left", "right", "top"], 60, 60)
-Azure = Character('Azure', 12, 4, 3, './sprite_sheet/azure.png', spells, ["bottom", "left", "right", "top"], 60, 60, -6)
-Girl  = Character('Girl', 2, 4, 3, './sprite_sheet/girl.png', spells, ["bottom", "left", "right", "top"], 60, 60, -3)
-Demo  = Character('Demo', 12, 4, 3, './sprite_sheet/Demo_sprite2.png', spells, ["bottom", "left", "right", "top"], 34, 40, 5)
 
 characters = [Lance,  Azure, Girl, Demo,  Green,  Scott]
 
