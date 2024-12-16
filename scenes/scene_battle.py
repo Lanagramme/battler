@@ -56,8 +56,8 @@ class BattleScene(Scene):
       # draw the spell aoe if the mouse hovers the spell range
       if hover_cell.area == 'attack':
         active_spell = Spells[self.battle.active_spell]
-        if active_spell[ "prevision_aoe" ]:
-          self.grid.draw_aoe(hover_cell, "prev", active_spell[ "prevision_aoe" ], active_spell["prevision_type"])
+        if active_spell.prevision_aoe:
+          self.grid.draw_aoe(hover_cell, "prev", active_spell.prevision_aoe, active_spell.prevision_type)
       else:
         self.grid.clean_prev()
 
@@ -76,18 +76,16 @@ class BattleScene(Scene):
               target = [hover_cell]
              
             # apply spell effect and damage
-            active_spell["effect"](target, self.grid)
-            damage = active_spell["damage"]
-            print(f"Speell => {active_spell['name']}")
+            print(f"Spell => {active_spell.name}")
+            active_spell.effect(target, self.grid)
+            damage = active_spell.damage
 
             # update character ui
-            ######
             for cell in target:
               if cell.pion:
                 self.ui.character_info(cell.y, cell.y, colors.RED, "-"+str(damage))
                 # kill dead characters
             for pion in self.battle.LIST_PIONS:
-                print(pion)
                 if pion.character.hp <= 0:
                   pion.character = False
                   self.grid.get_cell(*pion.position).pion = None
@@ -139,7 +137,7 @@ class BattleScene(Scene):
     self.battle.fade_turn_pannel()
 
   def next_turn(self):
-    self.ui.set_turn(self.battle.turn)
+    self.ui.set_turn()
     self.grid.clean_active()
     self.grid.clean_aoe()
     self.battle.change_turn = False

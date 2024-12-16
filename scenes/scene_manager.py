@@ -26,7 +26,7 @@ class SceneManager:
 
     if new_scene_name == 'battle':
       self.scenes["battle"].grid = Grid(COLLS, ROWS, MARGIN, GUTTER, CELL_SIZE, self.battle_state)
-      self.scenes['battle'].ui = Ui(self.battle_state.turn, WIDTH, HEIGHT, self.battle_state)
+      self.scenes['battle'].ui = Ui(WIDTH, HEIGHT, self.battle_state)
 
   def run(self):
     clock = pygame.time.Clock()

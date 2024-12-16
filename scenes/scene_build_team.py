@@ -6,7 +6,7 @@ from classes.character import Character
 from utils.colors import colors
 from utils.constants import WIDTH, HEIGHT
 
-spells = [Spells["Fireball"], Spells['Water stream']]
+spells = [Spells["Fireball"], Spells['Stream']]
 spells2 = [Spells["Splash"], Spells['Spark']]
 characters = []
 team = []

@@ -23,29 +23,35 @@ class Fade:
     pygame.display.flip()
     
 class Ui:
-  def __init__(self, current_turn, WIDTH, HEIGHT, battle):
-    self.font = pygame.font.Font(None, 30)
+  def __init__(self, WIDTH, HEIGHT, battle):
+    self.font  = pygame.font.Font("./assets/regular.ttf", 15)
+    self.Hfont = pygame.font.Font("./assets/rounded.ttf", 17)
+    self.Bfont = pygame.font.Font("./assets/regular.ttf", 15)
     self.battle = battle
-    self.set_turn(current_turn)
+    self.set_turn()
     self.clear_aoe = False
-
-    
     self.character = False
-    self.turn_button = Button(WIDTH - 15 - 100, 15, 100, 50, "Turn", colors.BLUE, colors.DARK_BLUE, colors.BLACK, 36, action=self.battle.next_turn)
+    self.turn_button = Button(
+      WIDTH-15-100, 15, 
+      100, 35, 
+      "Turn", 
+      colors.BLUE, 
+      colors.DARK_BLUE, 
+      colors.BLACK, 25, action=self.battle.next_turn)
     self.character_buttons = []
     self.attack_buttons = []
 
-    self.cancel_btn = Button(175, HEIGHT-60, 100, 50, "Cancel", colors.BLUE, colors.DARK_BLUE, colors.BLACK, 36, action=lambda: self.cancel_menu(battle))
+    self.cancel_btn = Button(175, HEIGHT-60, 100, 35, "Cancel", colors.BLUE, colors.DARK_BLUE, colors.BLACK, 25, action=lambda: self.cancel_menu(battle))
     self.infos = []
 
   def character_info(self, x, y, color, info):
     fade = Fade(x, y, color, info)
     self.infos.append(fade)
     
-  def set_turn(self, current_turn):
+  def set_turn(self):
     self.current_turn = Banner(15, colors.BLACK) 
-    self.current_turn.set_text(current_turn)
-    self.current_turn.set_color(self.battle.TEAMS[self.battle.turn][ "color" ])
+    self.current_turn.set_text(self.battle.turn)
+    self.current_turn.set_color(self.battle.active_team["color"])
 
   def cancel_menu(self, battle):
       self.clear_aoe = True
@@ -67,7 +73,7 @@ class Ui:
       self.character = elements
 
   def add_character_info(self, elements, character, margin, height, ):
-      name = self.font.render(character.name, True, colors.BLACK)
+      name = self.Hfont.render(character.name, True, colors.BLACK)
       hp = self.font.render(f"Hp: {character.hp}/{character.max_hp}", True, colors.BLACK)
       move_info = self.font.render(f"Mp: {character.moves}/{character.max_moves}", True, colors.BLACK)
     
@@ -76,25 +82,35 @@ class Ui:
       elements.append((move_info, (margin, height + 10)))
 
   def create_character_buttons(self, battle, grid):
-      move = Button(175, HEIGHT - 60, 100, 50, "Move", colors.BLUE, colors.DARK_BLUE, colors.BLACK, 36, action=grid.aoe_move)
-      attack = Button(190 + 100, HEIGHT - 60, 100, 50, "Attack", colors.BLUE, colors.DARK_BLUE, colors.BLACK, 36, action=grid.aoe_attack)
+      move = Button(175, HEIGHT - 60, 100, 35, "Move", colors.BLUE, colors.DARK_BLUE, colors.BLACK, 25, action=grid.aoe_move)
+      attack = Button(190 + 100, HEIGHT - 60, 100, 35, "Attack", colors.BLUE, colors.DARK_BLUE, colors.BLACK, 25, action=grid.aoe_attack)
     
       self.character_buttons.append(move)
       self.character_buttons.append(attack)
 
   def create_spell_buttons(self, character, battle, grid):
-      for i, spell in enumerate(character.spells):
-          btn = Button(175 + (i + 1) * (100 + 15), HEIGHT - 60, 100, 50, spell["name"], colors.BLUE, colors.DARK_BLUE, colors.BLACK, 36,
-                       action=lambda spell=spell: grid.draw_aoe_from_caster(spell))
-          self.attack_buttons.append(btn)
+    for i, spell in enumerate(character.spells):
+      x = 175 + (i + 1) * (100 + 15) 
+      y = HEIGHT - 60
+      width, height = (100, 35)
+      btn = Button(
+        x, y, 
+        width, height,
+        spell.name, 
+        colors.BLUE, 
+        colors.DARK_BLUE, 
+        colors.BLACK, 25,
+        action=lambda spell=spell: grid.draw_aoe_from_caster(spell)
+      )
+      self.attack_buttons.append(btn)
 
   def draw(self, SCREEN):
     self.current_turn.draw(SCREEN)
     self.turn_button.draw(SCREEN)
     if self.character:
-        for element in self.character:
-            SCREEN.blit(element[0], element[1])
-        self.draw_buttons(SCREEN)
+      for element in self.character:
+        SCREEN.blit(element[0], element[1])
+      self.draw_buttons(SCREEN)
 
     for info in self.infos[:]:
       info.update()
@@ -106,6 +122,7 @@ class Ui:
           for button in self.attack_buttons:
               button.draw(SCREEN)
       elif self.battle.moving:
+          print('movin')
           self.cancel_btn.draw(SCREEN)
       elif self.character is not False:
           for button in self.character_buttons:
@@ -118,7 +135,8 @@ class Button:
     self.color = color
     self.hover_color = hover_color
     self.text_color = text_color
-    self.font = pygame.font.Font(None, font_size)
+    # self.font = pygame.font.Font(None, font_size)
+    self.font = pygame.font.Font("./assets/rounded.ttf", font_size)
     self.message = text
     self.text = self.font.render(text, True, self.text_color)
     self.text_rect = self.text.get_rect(center=self.rect.center)

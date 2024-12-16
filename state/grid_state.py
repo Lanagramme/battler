@@ -18,6 +18,7 @@ class State():
       "Team 1": {"color": colors.PURPLE, "pions": []},
       "Team 2": {"color": colors.CARMIN, "pions": []},
     }
+    self.active_team = self.TEAMS[self.turn]
     self.moving = False
     self.attacking = False
     self.active_spell = False
@@ -32,6 +33,7 @@ class State():
         if pion.character.hp > 0:
           pion.character.moves = pion.character.max_moves
     self.change_turn = True
+    self.active_team = self.TEAMS[self.turn]
 
   def setup(self, team):
     for i, member in enumerate(team):
@@ -49,7 +51,7 @@ class State():
     Demo  = Character(
       'Demo', 12, 4, 3, 
       './sprite_sheet/Demo_sprite2.png', 
-      [Spells["Fireball"], Spells['Water stream']], 
+      [Spells["Fireball"], Spells['Stream']], 
       ["bottom", "left", "right", "top"], 
       34, 40, 5
     )

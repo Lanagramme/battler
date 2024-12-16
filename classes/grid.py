@@ -123,7 +123,6 @@ class Grid:
     pion.position = destination.coords()
     origin.pion = None
     if origin == self.active:
-      print('isactive')
       self.active = destination
       origin.active = False
       destination.active = True
@@ -204,8 +203,8 @@ class Grid:
       # ui.buttons = []
 
   def draw_aoe_from_caster(self,spell):
-    self.battle.active_spell = spell['name']
-    self.draw_aoe(self.active, "attack", spell['range'], spell['aoe'])
+    self.battle.active_spell = spell.name
+    self.draw_aoe(self.active, "attack", spell.range, spell.aoe)
     return
     
   def draw_aoe(self, origin, area_type, radius, aoe_type):
