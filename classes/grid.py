@@ -10,7 +10,7 @@ class Pion:
     self.character = character
 
   def move(self, destination, grid):
-    self.character.moves = (self.character.moves - 
+    self.character.mp = (self.character.mp - 
       (abs(self.position[0] - destination.x) + 
       abs(self.position[1] - destination.y) ))
     origin = grid.cells[self.position[0]][self.position[1]]
@@ -24,7 +24,7 @@ class Pion:
     print('======')
     print(f"name: {self.character.name}")
     print(f"hp: {self.character.max_hp}/{self.character.hp}")
-    print(f"PM: {self.character.max_moves}/{self.character.moves}")
+    print(f"PM: {self.character.max_mp}/{self.character.mp}")
     print(f"team: {self.team}")
     print(f"tokens: {self.character.tokens}")
     print(f"position: {self.position}")
@@ -171,7 +171,7 @@ class Grid:
     if self.active is not False:
       self.battle.moving = True
       character = self.active.pion.character
-      distance = character.moves
+      distance = character.mp
       character.animation.update()
       self.draw_aoe(self.active, "move", distance, "circle")
 
@@ -181,7 +181,7 @@ class Grid:
         cell.area = False
       self.aoe = {}
       self.battle.moving = False
-      self.battle.attacking = False
+      # self.battle.attacking = False
 
   def clean_prev(self):
     if self.prevision_aoe != False:
@@ -194,13 +194,32 @@ class Grid:
 
       if self.active.pion:
         self.active.pion.character.animation.set_idle()
-      self.battle.attacking = False
+      # self.battle.attacking = False
       
       self.active.active = False
       self.active = False
+      
 
       # ui.character = False
       # ui.buttons = []
+
+  def remove_pion(self, pion):
+    pion.character = False
+    self.get_cell(*pion.position).pion = None
+    self.battle.LIST_PIONS.remove(pion)
+
+  def set_targets(self, hover):
+    x, y = hover
+    hover_cell = self.cells[x][y]
+    targets = []
+    
+    if len(self.prevision_aoe):
+      for cell in self.prevision_aoe:
+        targets.append(cell)
+    else:
+      targets.append(hover_cell)
+      
+    return targets
 
   def draw_aoe_from_caster(self,spell):
     self.battle.active_spell = spell.name

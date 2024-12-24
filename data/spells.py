@@ -1,17 +1,6 @@
 from data.mechanics import Mechanics
 Spells = {}
     
-
-# def Spell(name, reach, aoe, damage, prevision=False, prevision_type="circle"):
-#   return {
-#     'name': name,
-#     'range': reach,
-#     'aoe': aoe,
-#     'damage': damage,
-#     'prevision_aoe': prevision,
-#     'prevision_type': prevision_type,
-#     'effect': None
-#   }
 class Spell:
   def __init__(self, name, reach, aoe, damage, prevision=False, prevision_type="circle"):
     self.name = name
@@ -30,7 +19,7 @@ class Spell:
       f"damage={self.damage}, prevision_aoe={self.prevision_aoe}, "
       f"prevision_type={self.prevision_type}, effect={self.effect})")
 
-  def check_spell_cost(self, caster):
+  def attempt_cast(self, caster):
     """
     Checks if the caster can pay the cost of a spell and deducts the cost if possible.
     
@@ -78,7 +67,8 @@ class Spell:
             print(f"{caster.name} must be under the status {value} to cast this spell")
             success = False
         case _:
-          if not stat in caster:
+          print(stat)
+          if not stat in dir(caster):
             print(f"Invalid ressource_pool '{stat}'")
             success = False       
           elif getattr(caster, stat, 0) < value:
@@ -111,6 +101,7 @@ def fireball_effect(target, grid):
   Mechanics[ "direct_damage" ]("Fireball", Fireball.damage, target)
   Mechanics[ "add_token_to_all_targets" ](target, 'fire', 1)
 Fireball.define_effect( fireball_effect)
+Fireball.cost = {"tokens": { "neutral": 2, "fire": 1}} 
 
 # ====== [ Spark ] ======
 # Cost: 1F 1PA
@@ -127,6 +118,7 @@ def spark_effect(target, grid):
       fire_token = 0
   return 
 Spark.define_effect( spark_effect )
+Spark.cost = {"tokens": { "neutral": 1, "fire": 1}} 
 
 # ====== [ Splash ] ======
 # push all targets 1m around to 3 m away
@@ -137,6 +129,7 @@ def splash_effect(target, grid):
   Mechanics[ "add_token_to_all_targets" ](target, 'water', 1)
   Mechanics[ "projection" ](grid, target, grid.hover, 3, Mechanics[ "collision" ])
 Splash.define_effect( splash_effect)
+Splash.cost = {"tokens": {"neutral": 3}}
 
 # ====== [ Frosw Wind ] ======
 
@@ -145,6 +138,7 @@ Stream = Spell('Stream', 4, "line", 3, 3)
 def water_stream_effect(target, grid):
   Mechanics[ "direct_damage" ]("Stream", Stream.damage, target)
 Stream.define_effect( water_stream_effect)
+Stream.cost = {"mp": 2}
 
 Spells["Fireball"] = Fireball
 Spells["Spark"] = Spark

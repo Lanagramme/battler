@@ -1,13 +1,14 @@
 import pygame
+import math
 
 class Character:
-  def __init__(self, name, hp, steps, moves, sprite_sheet, spells, directions, width, height, offsetx = 0, offsety = 0):
+  def __init__(self, name, hp, steps, mp, sprite_sheet, spells, directions, width, height, offsetx = 0, offsety = 0):
     self.name = name
     self.spells = spells
     self.hp = hp
     self.max_hp = hp
-    self.moves = moves
-    self.max_moves = moves
+    self.mp = mp
+    self.max_mp = mp
     self.sprite = sprite_asset(steps, 4, sprite_sheet, directions, width, height)
     self.width = width
     self.height = height
@@ -15,13 +16,20 @@ class Character:
     self.steps = steps
     self.offsetx = offsetx
     self.offsety = offsety
-    self.tokens = { "fire": 0, "water": 0, "earth": 0}
+    self.max_tokens = { "fire": 6, "water": 6, "earth": 6, "neutral":1}
+    self.tokens = { "fire": 6, "water": 6, "earth": 6, "neutral":1}
+    self.aura = { "fire": 0, "water": 0, "earth": 0, "neutral":0}
 
   def add_tokens(self, element, qte):
     self.tokens[element] = self.tokens[element] + qte
 
   def remove_tokens(self, element, qte):
     self.tokens[element] = self.tokens[element] + qte
+
+  def turn_reset(self, turn):
+    pa = turn * 0.5
+    if pa < 6: self.tokens['neutral'] = math.ceil(pa)
+    else: self.tokens['neutral'] = 6
 
 class AnimatedSprite:
   def __init__(self, sprite):

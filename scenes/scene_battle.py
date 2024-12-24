@@ -3,7 +3,22 @@ from classes.scene import Scene
 from classes.ui import Ui
 from data.spells import Spells
 from utils.colors import colors
+from utils.constants import HEIGHT, WIDTH, GUTTER, ROWS, COLLS, CELL_SIZE, MARGIN, SCREEN
 
+from classes.grid import Grid
+from data.spells import Spells
+from classes.character import Character
+spells = [Spells["Fireball"], Spells['Stream']]
+spells2 = [Spells["Splash"], Spells['Spark']]
+
+Lance = Character('Lance', 12, 4, 5, './sprite_sheet/silver.png', spells2, ["bottom", "left", "right", "top"], 60, 60, -6)
+Girl  = Character('Girl' ,  2, 4, 3, './sprite_sheet/girl.png'  , spells, ["bottom", "left", "right", "top"], 60, 60, -3)
+Touko = Character('Touko',  2, 4, 4, './sprite_sheet/past.png'  , spells, ["bottom", "left", "right", "top"], 60, 60)
+
+
+Scott = Character('Scott', 12, 4, 5, './sprite_sheet/Scott.png' , spells, ["bottom", "left", "right", "top"], 60, 60, -6)
+Green = Character('Green', 12, 4, 5, './sprite_sheet/green.png' , spells, ["bottom", "left", "right", "top"], 60, 60, -6)
+Azure = Character('Azure', 12, 4, 3, './sprite_sheet/azure.png' , spells, ["bottom", "left", "right", "top"], 60, 60, -6)
 class BattleScene(Scene):
   def __init__(self, state):
     super().__init__()
@@ -11,6 +26,9 @@ class BattleScene(Scene):
     self.battle = state
     self.clicking = False
     self.actor = False
+    self.battle.setup([Lance, Touko, Girl], [Scott, Green, Azure])
+    self.grid = Grid(COLLS, ROWS, MARGIN, GUTTER, CELL_SIZE, self.battle)
+    self.ui = Ui(WIDTH, HEIGHT, self.battle)
 
   # Handles player input and updates game state based on events.
 
@@ -27,6 +45,7 @@ class BattleScene(Scene):
 
   def handle_events(self, events):
     attack_in_progress = self.battle.attacking
+    pygame.draw.rect(SCREEN, colors.BLACK, ((200,200), (50,50)))
 
     # handle ui buttons
     for event in events:
@@ -65,52 +84,48 @@ class BattleScene(Scene):
       if clic and not self.clicking:
         self.clicking = True
 
+        # attack
         if hover_cell.area == "attack":
           if active_spell:
-            # add all targets in the spell's aoe
-            if len(self.grid.prevision_aoe):
-              target = []
-              for cell in self.grid.prevision_aoe:
-                target.append(cell)
-            else:
-              target = [hover_cell]
-             
-            # apply spell effect and damage
-            print(f"Spell => {active_spell.name}")
-            active_spell.effect(target, self.grid)
-            damage = active_spell.damage
+            if active_spell.attempt_cast(self.grid.active.pion.character):
+              print(f"Spell => {active_spell.name}")
+              
+              # apply spell effect on targets
+              
+              targets = self.grid.set_targets((x,y))
+              active_spell.effect(targets, self.grid)
+              self.ui.clear_aoe = True
 
-            # update character ui
-            for cell in target:
-              if cell.pion:
-                self.ui.character_info(cell.y, cell.y, colors.RED, "-"+str(damage))
-                # kill dead characters
-            for pion in self.battle.LIST_PIONS:
-                if pion.character.hp <= 0:
-                  pion.character = False
-                  self.grid.get_cell(*pion.position).pion = None
-                  self.battle.LIST_PIONS.remove(pion)
+              # visually show damages
+              for cell in targets:
+                if cell.pion:
+                  self.ui.character_info(cell.y, cell.y, colors.RED, "-"+str(active_spell.damage))
                   
-                
-          attack_in_progress = False
-          self.ui.cancel_menu(self.battle)
-          return
+              # kill dead characters
+              for pion in self.battle.LIST_PIONS:
+                  if pion.character.hp <= 0:
+                    self.grid.remove_pion(pion)
 
-        # select active pion
-        if hover_pion is not None and hover_pion.team == self.battle.turn:
+        # select griactive pion
+          # checked after attack so it is possible to cast spells on allies
+        elif hover_pion is not None and hover_pion.team == self.battle.turn:
           self.grid.activate(x, y, )
         
         elif hover_pion is None:
+        # move
           if hover_cell.area == "move":
             self.grid.active.pion.move(self.grid.get_cell(x,y), self.grid)
           else : 
+            # grid
             self.grid.clean_aoe()
             self.grid.clean_active()
+            self.battle.attacking = False
+            # ui
+            self.ui.character = False
     else:
       self.grid.hover = (None, None)
       if clic and not self.clicking:
         self.clicking = True
-        
 
   def update(self):
     # change turn
@@ -126,8 +141,6 @@ class BattleScene(Scene):
         self.ui.set_character( self.grid.active.pion.character, self.battle, self.grid)
       else:
         self.grid.clean_active()
-    else:
-      self.ui.character = False
 
   def render(self, screen):
     screen.fill(colors.WHITE)
@@ -138,6 +151,9 @@ class BattleScene(Scene):
 
   def next_turn(self):
     self.ui.set_turn()
+    self.ui.character = False
     self.grid.clean_active()
     self.grid.clean_aoe()
+    self.battle.attacking = False
     self.battle.change_turn = False
+

@@ -1,7 +1,7 @@
 import pygame
 pygame.font.init()
 from utils.colors import colors
-from utils.constants import HEIGHT, WIDTH, SCREEN
+from utils.constants import HEIGHT, WIDTH, SCREEN, MARGIN
 
 class Fade:
   def __init__(self, x, y, color, info):
@@ -41,8 +41,14 @@ class Ui:
     self.character_buttons = []
     self.attack_buttons = []
 
-    self.cancel_btn = Button(175, HEIGHT-60, 100, 35, "Cancel", colors.BLUE, colors.DARK_BLUE, colors.BLACK, 25, action=lambda: self.cancel_menu(battle))
     self.infos = []
+
+    self.char_anchor = {
+      "y" : HEIGHT - MARGIN["bottom"] -18,
+      "x" : 10
+    }
+    self.anchor = pygame.Rect(self.char_anchor["x"], self.char_anchor['y'], 400, MARGIN['bottom'])
+    self.cancel_btn = Button(230, self.char_anchor['y'] + 15, 100, 35, "Cancel", colors.BLUE, colors.DARK_BLUE, colors.BLACK, 25, action=lambda: self.cancel_menu(battle))
 
   def character_info(self, x, y, color, info):
     fade = Fade(x, y, color, info)
@@ -54,44 +60,51 @@ class Ui:
     self.current_turn.set_color(self.battle.active_team["color"])
 
   def cancel_menu(self, battle):
-      self.clear_aoe = True
-      battle.moving = False
-      battle.attacking = False
+    self.clear_aoe = True
+    battle.moving = False
+    battle.attacking = False
 
   def set_character(self, character, battle, grid, ):
-      self.character_buttons.clear()
-      self.attack_buttons.clear()
-      elements = []
+    self.character_buttons.clear()
+    self.attack_buttons.clear()
+    # elements = []
+    elements = {}
 
-      height = grid.spanY + 105
-      margin = grid.margin['left']
-      
-      self.add_character_info(elements, character, margin, height, )
-      self.create_character_buttons(battle, grid)
-      self.create_spell_buttons(character, battle, grid)
-      self.attack_buttons.append(self.cancel_btn)
-      self.character = elements
+    height = grid.spanY + 105
+    margin = grid.margin['left']
+    
+    self.add_character_info(elements, character, margin, height, )
+    self.create_character_buttons(battle, grid)
+    self.create_spell_buttons(character, battle, grid)
+    self.attack_buttons.append(self.cancel_btn)
+    # self.character = elements
+    self.character = character
 
   def add_character_info(self, elements, character, margin, height, ):
-      name = self.Hfont.render(character.name, True, colors.BLACK)
-      hp = self.font.render(f"Hp: {character.hp}/{character.max_hp}", True, colors.BLACK)
-      move_info = self.font.render(f"Mp: {character.moves}/{character.max_moves}", True, colors.BLACK)
-    
-      elements.append((name, (margin, height - 30)))
-      elements.append((hp, (margin, height - 10)))
-      elements.append((move_info, (margin, height + 10)))
-
+    name = self.Hfont.render(character.name, True, colors.BLACK)
+    hp = self.font.render(f"{character.hp}/{character.max_hp}", True, colors.BLACK)
+    move_info = self.font.render(f"Mp: {character.mp}/{character.max_mp}", True, colors.BLACK)
+  
   def create_character_buttons(self, battle, grid):
-      move = Button(175, HEIGHT - 60, 100, 35, "Move", colors.BLUE, colors.DARK_BLUE, colors.BLACK, 25, action=grid.aoe_move)
-      attack = Button(190 + 100, HEIGHT - 60, 100, 35, "Attack", colors.BLUE, colors.DARK_BLUE, colors.BLACK, 25, action=grid.aoe_attack)
-    
-      self.character_buttons.append(move)
-      self.character_buttons.append(attack)
+    pos_y = self.char_anchor['y'] + 15
+    bas_x = 230
+ 
+    width= 100
+    height= 35
+ 
+    move    = Button(bas_x, pos_y, width, height, "Move", colors.BLUE, colors.DARK_BLUE, colors.BLACK, 25, action=grid.aoe_move)
+    attack  = Button(bas_x + width +10, pos_y, width, height, "Attack", colors.BLUE, colors.DARK_BLUE, colors.BLACK, 25, action=grid.aoe_attack)
+  
+    self.character_buttons.append(move)
+    self.character_buttons.append(attack)
 
   def create_spell_buttons(self, character, battle, grid):
+    pos_y = self.char_anchor['y'] + 15
+    bas_x = 230
+    
     for i, spell in enumerate(character.spells):
-      x = 175 + (i + 1) * (100 + 15) 
-      y = HEIGHT - 60
+      x = bas_x + (i + 1) * (100 + 15) 
+      y = pos_y
       width, height = (100, 35)
       btn = Button(
         x, y, 
@@ -104,13 +117,79 @@ class Ui:
       )
       self.attack_buttons.append(btn)
 
+  def create_token_ui(self, character, x, y):
+    true_character = False
+    for pion in self.battle.LIST_PIONS:
+      if pion.character.name == character.name:
+        true_character = pion.character
+        break
+
+    if not true_character:
+      print("ERROR => character not found")
+      return
+    
+    pygame.draw.rect(SCREEN, colors.BLACK, self.anchor , 1)
+    
+    # draw portrait
+    portrait_rayon = (MARGIN['bottom'] )/2
+    portrait_x = x + 20 + portrait_rayon
+    portrait_y = y + portrait_rayon
+    portrait = pygame.draw.circle(SCREEN,colors.BLACK, (portrait_x , portrait_y) , portrait_rayon ,1)
+
+    move_info = self.font.render(f"Mp: {character.mp}/{character.max_mp}", True, colors.BLACK)
+    
+    # draw name
+    name_w = (portrait_rayon * 2) - 8
+    name_h = 20
+    name_x = portrait.center[0] - portrait_rayon + 4
+    name_y = portrait.center[1] + portrait_rayon - name_h/2
+    name_detail = ((name_x, name_y),(name_w, 20))
+    pygame.draw.rect(SCREEN, colors.WHITE, name_detail, 0, 5)
+    name_square = pygame.draw.rect(SCREEN, colors.BLACK, name_detail, 1, 5)
+    name = self.Hfont.render(character.name, True, colors.BLACK)
+    name_rect = name.get_rect(center=name_square.center)
+    SCREEN.blit(name, name_rect)
+    
+    # draw HP
+    hp = self.font.render(f"{character.hp}/{character.max_hp}", True, colors.BLACK)
+    hp_rect = hp.get_rect(center=(portrait.center[0],portrait.center[1] + portrait_rayon - 20))
+    SCREEN.blit(hp, hp_rect)
+    
+    # draw tokens
+    y = y-5 
+    offset_x = 50 + portrait_rayon*2
+    offset_y = 50
+    
+    token_rayon = 18
+    token_width = token_rayon * 2
+    
+    def draw_token(color, element):
+      positions = {
+        "earth" :     (offset_x, y + offset_y),
+        "water" :     (offset_x + token_width, y + offset_y),
+        "fire" :      (offset_x, y + offset_y + token_width),
+        "neutral" :   (offset_x + token_width, y + offset_y + token_width),
+      }
+      
+      token = pygame.draw.circle(SCREEN, color, positions[element] , token_rayon )
+      token_value = self.font.render(str(character.tokens[element]), True, colors.BLACK)
+      token_value_rect = token_value.get_rect(center=token.center)
+      SCREEN.blit(token_value,token_value_rect)
+
+    draw_token(colors.BLUE  , "water"   )
+    draw_token(colors.GREEN , "earth"   )
+    draw_token(colors.RED   , "fire"    )
+    draw_token(colors.ORANGE, "neutral" )
+
   def draw(self, SCREEN):
     self.current_turn.draw(SCREEN)
     self.turn_button.draw(SCREEN)
     if self.character:
-      for element in self.character:
-        SCREEN.blit(element[0], element[1])
+      x, y, = (self.char_anchor["x"], self.char_anchor["y"])
+      # for element in self.character:
+      #   SCREEN.blit(element[0], element[1])
       self.draw_buttons(SCREEN)
+      self.create_token_ui(self.character, x, y)
 
     for info in self.infos[:]:
       info.update()
@@ -118,15 +197,15 @@ class Ui:
         self.infos.remove(info)
 
   def draw_buttons(self, SCREEN):
-      if self.battle.attacking:
-          for button in self.attack_buttons:
-              button.draw(SCREEN)
-      elif self.battle.moving:
-          print('movin')
-          self.cancel_btn.draw(SCREEN)
-      elif self.character is not False:
-          for button in self.character_buttons:
-              button.draw(SCREEN)
+    if self.battle.attacking:
+        for button in self.attack_buttons:
+            button.draw(SCREEN)
+    elif self.battle.moving:
+        print('movin')
+        self.cancel_btn.draw(SCREEN)
+    elif self.character is not False:
+        for button in self.character_buttons:
+            button.draw(SCREEN)
 
             
 class Button:

@@ -1,7 +1,7 @@
 class Colors:
   def __init__(self):
     self.WHITE = (255, 241, 215)
-    self.BLUE = (93, 100, 190)
+    self.BLUE  = (93, 100, 190)
     self.GREEN = (44, 199, 33)
 
     self.ACTIVE = (220, 164, 183)
@@ -15,7 +15,5 @@ class Colors:
 
     self.DARK_BLUE = (0, 100, 200)
     self.BLACK = (0, 0, 0)
-
-
 
 colors = Colors()

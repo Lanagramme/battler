@@ -18,7 +18,7 @@ class SceneManager:
         'game': TeamSelect(self.battle_state),
         'battle': BattleScene(self.battle_state),
     }
-    self.current_scene = self.scenes['game']
+    self.current_scene = self.scenes['battle']
 
   def switch_scene(self, new_scene_name):
     fade_to_black(SCREEN)
