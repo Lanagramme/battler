@@ -13,6 +13,12 @@ class Spell:
 
   def define_effect(self, effect):
     self.effect = effect
+
+  def cast(self, caster, targets, grid):
+    print("================================================")
+    print(f"Spell => {self.name}")
+    if self.attempt_cast(caster) :
+      self.effect(targets, grid)
     
   def __repr__(self):
     return (f"Spell(name={self.name}, range={self.range}, aoe={self.aoe}, "
@@ -24,14 +30,12 @@ class Spell:
     Checks if the caster can pay the cost of a spell and deducts the cost if possible.
     
     Parameters:
-        spell: A spell object with `name` and `cost` attributes.
         caster: The character object casting the spell, with resources like aura, tokens, hp, etc.
         
     Returns:
         True if the spell can be cast, False otherwise.
     """
     
-    print("================================================")
     print(f"{caster.name} attempts to cast, {self.name}")
 
     success = True
@@ -63,7 +67,7 @@ class Spell:
           if not check_spell_cost('tokens', caster.tokens, value):
             success = False
         case 'status':
-          if next((status for status in caster.curses if status.get('name') == value), None) is  None:
+          if next((status for status in caster.status if status.get('name') == value), None) is  None:
             print(f"{caster.name} must be under the status {value} to cast this spell")
             success = False
         case _:
@@ -119,6 +123,7 @@ def spark_effect(target, grid):
   return 
 Spark.define_effect( spark_effect )
 Spark.cost = {"tokens": { "neutral": 1, "fire": 1}} 
+
 
 # ====== [ Splash ] ======
 # push all targets 1m around to 3 m away

@@ -1,5 +1,9 @@
 Mechanics = {}
 
+def status_damage(name, damage, target):
+  target.hp -= damage
+  print(f"{target.name} -{damage} pv")
+
 def direct_damage(name, damage, targets):
   for target in targets:
     if target is not None and target.pion is not None:
@@ -143,6 +147,7 @@ Frozen = status('Frozen', {"aura":{"water":3}}, 'wither', 2, 2, frozen_effect)
 
         
 Mechanics[ "direct_damage" ] = direct_damage
+Mechanics[ "status_damage" ] = status_damage
 Mechanics[ "add_token_to_all_targets" ] = add_token_to_all_targets
 Mechanics[ "collision" ] = collision
 Mechanics[ "projection" ] = projection

@@ -106,8 +106,9 @@ class Grid:
   def get_pion(self,x,y):
     return self.cells[x][y].pion 
     
-  def activate(self, x, y, ):
-    self.clean_active()
+  def activate(self, x, y, ui, ):
+    self.battle.attacking = False
+    self.deactivate(ui)
     target = self.get_cell(x,y)
     if (target.pion != None and target.pion.team == self.battle.turn):
       pion = target.pion
@@ -181,7 +182,6 @@ class Grid:
         cell.area = False
       self.aoe = {}
       self.battle.moving = False
-      # self.battle.attacking = False
 
   def clean_prev(self):
     if self.prevision_aoe != False:
@@ -189,19 +189,18 @@ class Grid:
         cell.prev = False
       self.prevision_aoe = {}
    
-  def clean_active(self):
+  def deactivate(self, ui):
+    self.clean_aoe()
+    self.battle.attacking = False
+    ui.character = False
+    ui.buttons = []
+    
     if self.active != False:
-
       if self.active.pion:
         self.active.pion.character.animation.set_idle()
-      # self.battle.attacking = False
       
       self.active.active = False
       self.active = False
-      
-
-      # ui.character = False
-      # ui.buttons = []
 
   def remove_pion(self, pion):
     pion.character = False

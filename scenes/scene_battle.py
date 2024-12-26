@@ -58,6 +58,14 @@ class BattleScene(Scene):
         for button in self.ui.character_buttons:
           button.handle_event(event)
       self.ui.turn_button.handle_event(event)
+
+    self.battle.kill_the_dead(self.grid)
+    
+
+    if self.grid.active and self.grid.active.pion not in self.battle.LIST_PIONS:
+      self.grid.deactivate(self.ui)
+      self.battle.attacking = False
+      self.ui.character = False
       
     # handle the mouse clic
     mouse_x, mouse_y = mouse_pos = pygame.mouse.get_pos()
@@ -87,41 +95,25 @@ class BattleScene(Scene):
         # attack
         if hover_cell.area == "attack":
           if active_spell:
-            if active_spell.attempt_cast(self.grid.active.pion.character):
-              print(f"Spell => {active_spell.name}")
-              
-              # apply spell effect on targets
-              
-              targets = self.grid.set_targets((x,y))
-              active_spell.effect(targets, self.grid)
-              self.ui.clear_aoe = True
+            active_spell.cast( self.grid.active.pion.character, self.grid.set_targets((x,y)), self.grid)
+            self.ui.clear_aoe = True
 
-              # visually show damages
-              for cell in targets:
-                if cell.pion:
-                  self.ui.character_info(cell.y, cell.y, colors.RED, "-"+str(active_spell.damage))
-                  
-              # kill dead characters
-              for pion in self.battle.LIST_PIONS:
-                  if pion.character.hp <= 0:
-                    self.grid.remove_pion(pion)
-
-        # select griactive pion
-          # checked after attack so it is possible to cast spells on allies
+            # visually show damages
+            # for cell in targets:
+            #   if cell.pion:
+                # self.ui.character_info(cell.y, cell.y, colors.RED, "-"+str(active_spell.damage))
+                
+        # select grid active pion
+        # checked after attack so it is possible to cast spells on allies
         elif hover_pion is not None and hover_pion.team == self.battle.turn:
-          self.grid.activate(x, y, )
+          self.grid.activate(x, y, self.ui)
         
         elif hover_pion is None:
         # move
           if hover_cell.area == "move":
             self.grid.active.pion.move(self.grid.get_cell(x,y), self.grid)
           else : 
-            # grid
-            self.grid.clean_aoe()
-            self.grid.clean_active()
-            self.battle.attacking = False
-            # ui
-            self.ui.character = False
+            self.grid.deactivate(self.ui)
     else:
       self.grid.hover = (None, None)
       if clic and not self.clicking:
@@ -140,7 +132,7 @@ class BattleScene(Scene):
       if self.grid.active.pion:
         self.ui.set_character( self.grid.active.pion.character, self.battle, self.grid)
       else:
-        self.grid.clean_active()
+        self.grid.deactivate(self.ui)
 
   def render(self, screen):
     screen.fill(colors.WHITE)
@@ -152,7 +144,7 @@ class BattleScene(Scene):
   def next_turn(self):
     self.ui.set_turn()
     self.ui.character = False
-    self.grid.clean_active()
+    self.grid.deactivate(self.ui)
     self.grid.clean_aoe()
     self.battle.attacking = False
     self.battle.change_turn = False

@@ -125,6 +125,7 @@ class Ui:
         break
 
     if not true_character:
+      self.character = False
       print("ERROR => character not found")
       return
     
@@ -157,25 +158,40 @@ class Ui:
     
     # draw tokens
     y = y-5 
-    offset_x = 50 + portrait_rayon*2
+    offset_x = 65 + portrait_rayon*2
     offset_y = 50
     
     token_rayon = 18
+    aura_rayon  = 10
     token_width = token_rayon * 2
     
     def draw_token(color, element):
-      positions = {
+      token_positions = {
         "earth" :     (offset_x, y + offset_y),
         "water" :     (offset_x + token_width, y + offset_y),
         "fire" :      (offset_x, y + offset_y + token_width),
         "neutral" :   (offset_x + token_width, y + offset_y + token_width),
       }
       
-      token = pygame.draw.circle(SCREEN, color, positions[element] , token_rayon )
+      aura_positions = {
+        "earth" :     (offset_x - 18, y + offset_y + 5),
+        "water" :     (offset_x + token_width + 18, y + offset_y + 5),
+        "fire" :      (offset_x - 18, y + offset_y + token_width + 5),
+        "neutral" :   (offset_x + token_width + 18, y + offset_y + token_width + 5),
+      }
+      
+      token = pygame.draw.circle(SCREEN, color, token_positions[element] , token_rayon )
       token_value = self.font.render(str(character.tokens[element]), True, colors.BLACK)
       token_value_rect = token_value.get_rect(center=token.center)
       SCREEN.blit(token_value,token_value_rect)
 
+      aura = pygame.draw.circle(SCREEN, color, aura_positions[element] , aura_rayon )
+      aura_border = pygame.draw.circle(SCREEN, colors.BLACK, aura_positions[element] , aura_rayon, 1 )
+      aura_value = self.font.render(str(character.aura[element]), True, colors.BLACK)
+      aura_value_rect = aura_value.get_rect(center=aura.center)
+      aura_border_rect = aura_value.get_rect(center=aura.center)
+      SCREEN.blit(aura_value,aura_value_rect)
+      
     draw_token(colors.BLUE  , "water"   )
     draw_token(colors.GREEN , "earth"   )
     draw_token(colors.RED   , "fire"    )

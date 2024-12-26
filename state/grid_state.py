@@ -1,5 +1,6 @@
 import pygame
 from data.spells import Spells
+from data.effects import Status
 
 from utils.colors import colors
 from utils.constants import SCREEN
@@ -26,15 +27,30 @@ class State():
     self.change_turn = False
     self.fade_turn_pannel = fade_out_surface(SCREEN, 'Team 1', self.TEAMS[self.turn]["color"])
 
+  def kill_the_dead(self, grid):
+    # for pion in self.LIST_PIONS[:]:
+    #   if pion.character.hp <= 0:
+    #     grid.remove_pion(pion)
+      
+    for pion in self.LIST_PIONS[:]:  # Iterate over a copy of the list
+      if pion.character.hp <= 0:
+        grid.remove_pion(pion)
+          # pion.character = False
+          # grid.get_cell(*pion.position).pion = None
+          # self.LIST_PIONS.remove(pion)  # Modify the original list
+          #   
   def next_turn(self):
     self.turn = "Team 2" if self.turn == "Team 1" else "Team 1"
     if self.turn == "Team 1": self.turn_number += 1
     self.fade_turn_pannel = fade_out_surface(SCREEN, self.turn, self.TEAMS[self.turn]["color"])
     for pion in self.TEAMS[self.turn][ "pions" ]:
       if pion.character:
-        if pion.character.hp > 0:
-          pion.character.mp = pion.character.max_mp
-          pion.character.turn_reset(self.turn_number)
+        character = pion.character
+        if character.hp > 0:
+          character.mp = character.max_mp
+          character.turn_reset(self.turn_number)
+        for status in character.status:
+          Status[status['name']].life_cycle(character)
     self.change_turn = True
     self.active_team = self.TEAMS[self.turn]
 

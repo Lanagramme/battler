@@ -7,8 +7,8 @@ class Character:
     self.spells = spells
     self.hp = hp
     self.max_hp = hp
-    self.mp = mp
     self.max_mp = mp
+    self.mp = mp
     self.sprite = sprite_asset(steps, 4, sprite_sheet, directions, width, height)
     self.width = width
     self.height = height
@@ -16,9 +16,10 @@ class Character:
     self.steps = steps
     self.offsetx = offsetx
     self.offsety = offsety
-    self.max_tokens = { "fire": 6, "water": 6, "earth": 6, "neutral":1}
-    self.tokens = { "fire": 6, "water": 6, "earth": 6, "neutral":1}
-    self.aura = { "fire": 0, "water": 0, "earth": 0, "neutral":0}
+    self.status = [{"name":"Burning", "level":1}]
+    self.max_tokens = { "fire": 6, "water": 6, "earth": 6, "neutral":6}
+    self.tokens = { "fire": 6, "water": 6, "earth": 6, "neutral":6}
+    self.aura   = { "fire": 6, "water": 6, "earth": 6, "neutral":6}
 
   def add_tokens(self, element, qte):
     self.tokens[element] = self.tokens[element] + qte
