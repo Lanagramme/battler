@@ -2,7 +2,7 @@ from data.mechanics import Mechanics
 Spells = {}
     
 class Spell:
-  def __init__(self, name, reach, aoe, damage, prevision=False, prevision_type="circle"):
+  def __init__(self, name, reach, aoe, damage, prevision=False, prevision_type="circle", blocking = False):
     self.name = name
     self.range = reach
     self.aoe = aoe
@@ -10,6 +10,7 @@ class Spell:
     self.prevision_aoe = prevision
     self.prevision_type = prevision_type
     self.effect = None
+    self.blocking = blocking
 
   def define_effect(self, effect):
     self.effect = effect
@@ -129,7 +130,7 @@ Spark.cost = {"tokens": { "neutral": 1, "fire": 1}}
 # push all targets 1m around to 3 m away
 # apply one water token to targets
 # apply status wet to targets
-Splash = Spell('Splash', 3, "line", 0, 3, "line")
+Splash = Spell('Splash', 3, "line", 0, 3, "line", blocking=False)
 def splash_effect(target, grid):
   Mechanics[ "add_token_to_all_targets" ](target, 'water', 1)
   Mechanics[ "projection" ](grid, target, grid.hover, 3, Mechanics[ "collision" ])

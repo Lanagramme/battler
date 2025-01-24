@@ -2,7 +2,6 @@ import pygame
 from utils.constants import SIZE, SCREEN, HEIGHT, WIDTH, GUTTER, ROWS, COLLS, SIZE, CELL_SIZE, MARGIN
 from utils.colors import colors
 
-
 class Pion:
   def __init__(self, team, position, character):
     self.team = team
@@ -43,6 +42,7 @@ class Cell:
     self.active = active
     self.hover = hover
     self.pion = pion
+    self.is_obstacle = False
 
     self.body = pygame.Rect(
       (margin['left'] + x * (size + gutter), margin["top"] + y * (size + gutter)),
@@ -78,8 +78,15 @@ class Grid:
     self.spanX = width * (size + gutter)
     self.spanY = height * (size + gutter)
 
-    self.aoe = {}
-    self.prevision_aoe = {}
+    self.aoe = set()
+    self.prevision_aoe = set()
+    self.aoe_templates = {
+        "circle": {},
+        "line": {},
+        "cross": {},
+        "cone": {}
+    }
+    self.precompute_aoe_templates()
     self.board = pygame.Rect(self.margin['left'], self.margin["top"], self.spanX, self.spanY)
     # self.board = False
 
@@ -99,6 +106,7 @@ class Grid:
         cell.pion = pion
 
   def get_cell(self, x,y):
+    """Returns a cell at the specified grid coordinates, or None if out of bounds."""
     if 0 <= x < self.X and 0 <= y  < self.Y:
       return self.cells[x][y]
     return None
@@ -174,20 +182,20 @@ class Grid:
       character = self.active.pion.character
       distance = character.mp
       character.animation.update()
-      self.draw_aoe(self.active, "move", distance, "circle")
+      self.draw_aoe(self.active, "move", distance, "circle", True)
 
   def clean_aoe(self):
     if self.aoe != False:
       for cell in self.aoe:
         cell.area = False
-      self.aoe = {}
+      self.aoe.clear()
       self.battle.moving = False
 
   def clean_prev(self):
     if self.prevision_aoe != False:
       for cell in self.prevision_aoe:
         cell.prev = False
-      self.prevision_aoe = {}
+      self.prevision_aoe.clear()
    
   def deactivate(self, ui):
     self.clean_aoe()
@@ -220,65 +228,112 @@ class Grid:
       
     return targets
 
+
+
+  def precompute_aoe_templates(self):
+      """Precompute AoE templates for common shapes and ranges."""
+      max_radius = max(self.X, self.Y)
+      for radius in range(1, max_radius + 1):
+          self.aoe_templates["circle"][radius] = self.generate_circle_template(radius)
+          self.aoe_templates["line"][radius] = self.generate_line_template(radius)
+          self.aoe_templates["cross"][radius] = self.generate_cross_template(radius)
+          self.aoe_templates["cone"][radius] = self.generate_cone_template(radius)
+
   def draw_aoe_from_caster(self,spell):
     self.battle.active_spell = spell.name
-    self.draw_aoe(self.active, "attack", spell.range, spell.aoe)
+    self.draw_aoe(self.active, "attack", spell.range, spell.aoe, blocking=spell.blocking)
+    ###
     return
     
-  def draw_aoe(self, origin, area_type, radius, aoe_type):
+  def draw_aoe(self, origin, area_type, radius, aoe_type, blocking=False):
+    """Marks cells in the grid based on AoE type, range, and obstacle interaction."""
     if area_type != 'prev':
-      self.clean_aoe()
+        self.clean_aoe()
     else:
-      self.clean_prev()
+        self.clean_prev()
 
-    cells = self.cells
+    area = set()
     visited = set()
-    area = {origin}
-    if aoe_type == "circle":
-      queue = [(origin, 0)]
-      while queue:
-          cell, distance = queue.pop(0)
-          
-          if distance >= radius:
-              continue
 
-          for dx, dy in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
-              nx, ny = cell.x + dx, cell.y + dy
-              if 0 <= nx < self.X and 0 <= ny < self.Y:
-                  neighbor = cells[nx][ny]
+    # Use precomputed offsets for non-blocking AoEs
+    if not blocking and radius in self.aoe_templates[aoe_type]:
+        offsets = self.aoe_templates[aoe_type][radius]
+        for dx, dy in offsets:
+            neighbor = self.get_cell(origin.x + dx, origin.y + dy)
+            if neighbor:
+                area.add(neighbor)
+    else:
+        # Use propagation for blocking AoEs
+        queue = [(origin, 0)]
 
-                  if neighbor not in visited:
-                    if area_type == "move" and neighbor.pion != None:
-                      pass
-                    else:
-                      visited.add(neighbor)
-                      area.add(neighbor)
-                      queue.append((neighbor, distance + 1))  # Add the neighbor to the queue
+        while queue:
+            current_cell, distance = queue.pop(0)
 
-    elif aoe_type == "line":
-      start = origin.x - radius if origin.x - radius >= 0 else 0
-      end   = origin.x + radius +1 if origin.x + radius+1 <= self.X else self.X
-      for x in range(start, end):
-        if x != origin.x:
-          area.add(cells[x][origin.y])
-        else:
-          start = origin.y - radius if origin.y - radius >= 0 else 0
-          end   = origin.y + radius +1 if origin.y + radius+1 <= self.Y else self.Y
-          for cell in cells[x]:
-            if cell.y in range(start,end):
-                area.add(cell)
+            if distance >= radius:
+                continue
 
-      
+            # Fetch valid offsets for the AoE type
+            if aoe_type == "circle":
+                offsets = [(-1, 0), (1, 0), (0, -1), (0, 1)]  # Cardinal directions
+            elif aoe_type == "line":
+                offsets = [(-distance, 0), (distance, 0), (0, -distance), (0, distance)]
+            else:
+                offsets = self.aoe_templates.get(aoe_type, {}).get(radius, [])
+
+            for dx, dy in offsets:
+                neighbor = self.get_cell(current_cell.x + dx, current_cell.y + dy)
+                if neighbor and neighbor not in visited:
+                    visited.add(neighbor)
+
+                    if blocking and (neighbor.pion or neighbor.is_obstacle):
+                        area.add(neighbor)
+                        continue
+
+                    area.add(neighbor)
+                    queue.append((neighbor, distance + 1))
+
+    # Mark the grid cells
     if area_type == 'prev':
-      self.prevision_aoe = area
-      for cell in self.prevision_aoe:
-        cell.prev = True  # Assign the area type to each cell
-    elif area_type in ['attack', "move"]:
-      self.aoe = area
-      for cell in self.aoe:
-          cell.area = area_type  # Assign the area type to each cell
+        self.prevision_aoe = area
+        for cell in self.prevision_aoe:
+            cell.prev = True
+    elif area_type in ['attack', 'move']:
+        self.aoe = area
+        for cell in self.aoe:
+            cell.area = area_type
 
+  def generate_circle_template(self, radius):
+      """Generate a set of offsets for a circular AoE of a given radius."""
+      offsets = set()
+      for x in range(-radius, radius + 1):
+          for y in range(-radius, radius + 1):
+              if abs(x) + abs(y) <= radius:
+                  offsets.add((x, y))
+      return offsets
 
+  def generate_line_template(self, radius):
+      """Generate a set of offsets for a line AoE of a given radius."""
+      offsets = set()
+      for step in range(1, radius + 1):
+          offsets.update({(-step, 0), (step, 0), (0, -step), (0, step)})
+      return offsets
+
+  def generate_cross_template(self, radius):
+      """Generate a set of offsets for a cross-shaped AoE of a given radius."""
+      offsets = set()
+      for step in range(radius + 1):
+          offsets.update({(-step, 0), (step, 0), (0, -step), (0, step)})
+      return offsets
+
+  def generate_cone_template(self, radius):
+      """Generate a set of offsets for a cone-shaped AoE of a given radius."""
+      offsets = set()
+      for step in range(1, radius + 1):
+          base_start = -step + 1
+          base_end = step
+          for offset in range(base_start, base_end):
+              offsets.update({(-step, offset), (step, offset), (offset, -step), (offset, step)})
+      return offsets
 
         
 
