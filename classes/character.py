@@ -16,7 +16,7 @@ class Character:
     self.steps = steps
     self.offsetx = offsetx
     self.offsety = offsety
-    self.status = [{"name":"Burning", "level":1}]
+    self.status = []
     self.max_tokens = { "fire": 6, "water": 6, "earth": 6, "neutral":6}
     self.tokens = { "fire": 6, "water": 6, "earth": 6, "neutral":6}
     self.aura   = { "fire": 6, "water": 6, "earth": 6, "neutral":6}

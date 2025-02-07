@@ -139,7 +139,7 @@ class BattleScene(Scene):
     self.grid.paint(screen)
     self.ui.draw(screen)
     self.ui.draw_buttons(screen)
-    self.battle.fade_turn_pannel()
+    # self.battle.fade_turn_pannel()
 
   def next_turn(self):
     self.ui.set_turn()

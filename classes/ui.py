@@ -3,32 +3,23 @@ pygame.font.init()
 from utils.colors import colors
 from utils.constants import HEIGHT, WIDTH, SCREEN, MARGIN
 
-class Fade:
-  def __init__(self, x, y, color, info):
-    self.x = x
-    self.y = y
-    self.font = pygame.font.Font(None, 30)
-    self.popup = self.font.render(info, True, color )
-    self.alpha = 255
-    self.fade_speed = 2
+from classes.ui_components import Button, Banner, Fade, TurnBanner
 
-  def update(self):
-    self.popup.set_alpha(self.alpha)
-    if self.alpha > 0:
-      self.alpha -= self.fade_speed
-      self.x -= 5
-      if self.alpha < 0:
-        self.alpha = 0
-    SCREEN.blit(self.popup, (self.x, self.y))
-    pygame.display.flip()
+
     
 class Ui:
-  def __init__(self, WIDTH, HEIGHT, battle):
+  def __init__(self, WIDTH, HEIGHT, game_state):
+    self.game_state = game_state
+    self.game_state.add_observer(self)
+    self.turn_display = Banner(15, colors.BLACK)  # UI component for turn display
+    
     self.font  = pygame.font.Font("./assets/regular.ttf", 15)
     self.Hfont = pygame.font.Font("./assets/rounded.ttf", 17)
     self.Bfont = pygame.font.Font("./assets/regular.ttf", 15)
-    self.battle = battle
     self.set_turn()
+    
+    self.turn_banner = TurnBanner(self.game_state)
+    
     self.clear_aoe = False
     self.character = False
     self.turn_button = Button(
@@ -37,7 +28,7 @@ class Ui:
       "Turn", 
       colors.BLUE, 
       colors.DARK_BLUE, 
-      colors.BLACK, 25, action=self.battle.next_turn)
+      colors.BLACK, 25, action=self.game_state.next_turn)
     self.character_buttons = []
     self.attack_buttons = []
 
@@ -48,23 +39,30 @@ class Ui:
       "x" : 10
     }
     self.anchor = pygame.Rect(self.char_anchor["x"], self.char_anchor['y'], 400, MARGIN['bottom'])
-    self.cancel_btn = Button(230, self.char_anchor['y'] + 15, 100, 35, "Cancel", colors.BLUE, colors.DARK_BLUE, colors.BLACK, 25, action=lambda: self.cancel_menu(battle))
+    self.cancel_btn = Button(230, self.char_anchor['y'] + 15, 100, 35, "Cancel", colors.BLUE, colors.DARK_BLUE, colors.BLACK, 25, action=lambda: self.cancel_menu(game_state))
 
+  def update(self, event, *args):
+    """React to state changes."""
+    if event == "TURN_CHANGED":
+      new_turn, turn_number = args
+      self.turn_display.set_text(f"Turn: {new_turn} ({turn_number})")
+      self.turn_display.set_color(self.game_state.TEAMS[new_turn]["color"])
+      
   def character_info(self, x, y, color, info):
     fade = Fade(x, y, color, info)
     self.infos.append(fade)
     
   def set_turn(self):
     self.current_turn = Banner(15, colors.BLACK) 
-    self.current_turn.set_text(self.battle.turn)
-    self.current_turn.set_color(self.battle.active_team["color"])
+    self.current_turn.set_text(self.game_state.turn)
+    self.current_turn.set_color(self.game_state.active_team["color"])
 
-  def cancel_menu(self, battle):
+  def cancel_menu(self, game_state):
     self.clear_aoe = True
-    battle.moving = False
-    battle.attacking = False
+    game_state.moving = False
+    game_state.attacking = False
 
-  def set_character(self, character, battle, grid, ):
+  def set_character(self, character, game_state, grid, ):
     self.character_buttons.clear()
     self.attack_buttons.clear()
     # elements = []
@@ -74,8 +72,8 @@ class Ui:
     margin = grid.margin['left']
     
     self.add_character_info(elements, character, margin, height, )
-    self.create_character_buttons(battle, grid)
-    self.create_spell_buttons(character, battle, grid)
+    self.create_character_buttons(game_state, grid)
+    self.create_spell_buttons(character, game_state, grid)
     self.attack_buttons.append(self.cancel_btn)
     # self.character = elements
     self.character = character
@@ -85,7 +83,7 @@ class Ui:
     hp = self.font.render(f"{character.hp}/{character.max_hp}", True, colors.BLACK)
     move_info = self.font.render(f"Mp: {character.mp}/{character.max_mp}", True, colors.BLACK)
   
-  def create_character_buttons(self, battle, grid):
+  def create_character_buttons(self, game_state, grid):
     pos_y = self.char_anchor['y'] + 15
     bas_x = 230
  
@@ -98,7 +96,7 @@ class Ui:
     self.character_buttons.append(move)
     self.character_buttons.append(attack)
 
-  def create_spell_buttons(self, character, battle, grid):
+  def create_spell_buttons(self, character, game_state, grid):
     pos_y = self.char_anchor['y'] + 15
     bas_x = 230
     
@@ -119,7 +117,7 @@ class Ui:
 
   def create_token_ui(self, character, x, y):
     true_character = False
-    for pion in self.battle.LIST_PIONS:
+    for pion in self.game_state.LIST_PIONS:
       if pion.character.name == character.name:
         true_character = pion.character
         break
@@ -200,6 +198,9 @@ class Ui:
   def draw(self, SCREEN):
     self.current_turn.draw(SCREEN)
     self.turn_button.draw(SCREEN)
+    
+    self.turn_banner.draw(SCREEN)
+    
     if self.character:
       x, y, = (self.char_anchor["x"], self.char_anchor["y"])
       # for element in self.character:
@@ -213,10 +214,10 @@ class Ui:
         self.infos.remove(info)
 
   def draw_buttons(self, SCREEN):
-    if self.battle.attacking:
+    if self.game_state.attacking:
         for button in self.attack_buttons:
             button.draw(SCREEN)
-    elif self.battle.moving:
+    elif self.game_state.moving:
         print('movin')
         self.cancel_btn.draw(SCREEN)
     elif self.character is not False:
@@ -224,56 +225,3 @@ class Ui:
             button.draw(SCREEN)
 
             
-class Button:
-  def __init__(self, x, y, width, height, text, color, hover_color, text_color, font_size, action=None):
-    self.rect = pygame.Rect(x, y, width, height)
-    self.color = color
-    self.hover_color = hover_color
-    self.text_color = text_color
-    # self.font = pygame.font.Font(None, font_size)
-    self.font = pygame.font.Font("./assets/rounded.ttf", font_size)
-    self.message = text
-    self.text = self.font.render(text, True, self.text_color)
-    self.text_rect = self.text.get_rect(center=self.rect.center)
-    self.action = action  # Function to be called on click
-    self.is_hovered = False
-
-  def draw(self, SCREEN):
-    if self.is_hovered:
-      pygame.draw.rect(SCREEN, self.hover_color, self.rect)
-    else:
-      pygame.draw.rect(SCREEN, self.color, self.rect)
-
-    SCREEN.blit(self.text, self.text_rect)
-
-  def handle_event(self, event):
-    mouse_pos = pygame.mouse.get_pos()
-
-    self.is_hovered = self.rect.collidepoint(mouse_pos)
-
-    if self.is_hovered and event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-      if self.action:
-        self.action()
-        
-class Banner:
-  def __init__(self, x, color):
-    self.x = x
-    self.color = color
-    self.font = pygame.font.Font(None, 30)  # Font size 30
-    self.message = ''  # Placeholder for the message
-  
-  def set_text(self, text): 
-    self.message = text
-
-  def set_color(self, color): 
-    self.color = color
-
-  def draw(self, SCREEN):
-    text_surface = self.font.render(self.message, True, self.color)
-    
-    rect = text_surface.get_rect()
-    rect.centerx = SCREEN.get_rect().centerx 
-    rect.top = self.x  
-
-    SCREEN.blit(text_surface, rect)
-

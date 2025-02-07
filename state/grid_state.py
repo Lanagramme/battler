@@ -9,10 +9,13 @@ from utils.functions import fade_out_surface
 from classes.grid import Pion
 from classes.character import Character
 
+from patterns.observer import Observable
+
 pygame.font.init()
 
-class State():
+class State(Observable):
   def __init__(self):
+    super().__init__()
     self.turn = 'Team 1'
     self.turn_number = 1
     self.LIST_PIONS = []
@@ -38,11 +41,15 @@ class State():
           # pion.character = False
           # grid.get_cell(*pion.position).pion = None
           # self.LIST_PIONS.remove(pion)  # Modify the original list
-          #   
+
   def next_turn(self):
     self.turn = "Team 2" if self.turn == "Team 1" else "Team 1"
     if self.turn == "Team 1": self.turn_number += 1
+    
+    self.notify_observers("TURN_CHANGED", self.turn, self.turn_number)
+    
     self.fade_turn_pannel = fade_out_surface(SCREEN, self.turn, self.TEAMS[self.turn]["color"])
+    
     for pion in self.TEAMS[self.turn][ "pions" ]:
       if pion.character:
         character = pion.character
