@@ -10,12 +10,28 @@ class Spell:
     self.prevision_aoe = prevision
     self.prevision_type = prevision_type
     self.effect = None
+    self.effects = []
     self.blocking = blocking
 
   def define_effect(self, effect):
     self.effect = effect
 
+  def add_effect(self, effect):
+    self.effects.append(effect)
+
   def cast(self, caster, targets, grid):
+    if not isinstance(targets, list):
+      targets = [targets]
+
+    print("================================================")
+    print(f"Spell => {self.name}")
+    if self.attempt_cast(caster) :
+      for target in targets:
+        if target and target.pion:
+          for effect in self.effects:
+            effect.cast(target)
+
+  def cast2(self, caster, targets, grid):
     print("================================================")
     print(f"Spell => {self.name}")
     if self.attempt_cast(caster) :
@@ -99,52 +115,41 @@ class Spell:
     return False
 
 # ====== [ Fireball ] ======
-# Cost: 1N
-# apply one fire token to the target
+# Cost: 2N 1F
+# deal 2 damage and apply one fire token to target
 Fireball = Spell('Fireball', 8, "circle", 2)
-def fireball_effect(target, grid): 
-  Mechanics[ "direct_damage" ]("Fireball", Fireball.damage, target)
-  Mechanics[ "add_token_to_all_targets" ](target, 'fire', 1)
-Fireball.define_effect( fireball_effect)
 Fireball.cost = {"tokens": { "neutral": 2, "fire": 1}} 
+Fireball.add_effect(Mechanics[ "Direct_damage" ](Fireball.damage))
+Fireball.add_effect(Mechanics[ "Add_token" ]("fire", 1))
+
 
 # ====== [ Spark ] ======
-# Cost: 1F 1PA
-# all fire token of the target explode adding 2 dmg by token 
+# Cost: 1N 1F 
+# all fire token of the targets explode adding 2 dmg by token
 Spark = Spell('Spark', 3, "circle", 1, 2)
 Spark_splinter = Spell('Splinter', 1, None, 2)
-def spark_effect(target, grid): 
-  Mechanics[ "direct_damage" ]("Spark", Spark.damage, target)
-  for x in target:
-    if x.pion:
-      fire_token = x.pion.character.tokens['fire']
-      for _ in range(fire_token):
-        Mechanics[ "direct_damage" ]("Spark_splinter", Spark_splinter.damage, [x])
-      fire_token = 0
-  return 
-Spark.define_effect( spark_effect )
 Spark.cost = {"tokens": { "neutral": 1, "fire": 1}} 
-
+Spark.add_effect(Mechanics["Direct_damage"](Spark.damage))
+Spark.add_effect(Mechanics["Consume_token_and_hurt"]('fire', Spark_splinter.damage))
 
 # ====== [ Splash ] ======
 # push all targets 1m around to 3 m away
 # apply one water token to targets
 # apply status wet to targets
 Splash = Spell('Splash', 3, "line", 0, 3, "line", blocking=False)
+Splash.cost = {"tokens": {"neutral": 3}}
+Splash.add_effect(Mechanics['Add_token']("water", 1))
 def splash_effect(target, grid):
   Mechanics[ "add_token_to_all_targets" ](target, 'water', 1)
   Mechanics[ "projection" ](grid, target, grid.hover, 3, Mechanics[ "collision" ])
 Splash.define_effect( splash_effect)
-Splash.cost = {"tokens": {"neutral": 3}}
 
 # ====== [ Frosw Wind ] ======
 
 # ====== [ Stream ] ======
 Stream = Spell('Stream', 4, "line", 3, 3)
-def water_stream_effect(target, grid):
-  Mechanics[ "direct_damage" ]("Stream", Stream.damage, target)
-Stream.define_effect( water_stream_effect)
 Stream.cost = {"mp": 2}
+Stream.add_effect(Mechanics[ "Direct_damage" ](Stream.damage))
 
 Spells["Fireball"] = Fireball
 Spells["Spark"] = Spark

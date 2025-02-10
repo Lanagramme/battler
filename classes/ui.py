@@ -2,16 +2,14 @@ import pygame
 pygame.font.init()
 from utils.colors import colors
 from utils.constants import HEIGHT, WIDTH, SCREEN, MARGIN
-
 from classes.ui_components import Button, Banner, Fade, TurnBanner
-
-
+from patterns.observer import Observer
     
-class Ui:
+class Ui(Observer):
   def __init__(self, WIDTH, HEIGHT, game_state):
     self.game_state = game_state
     self.game_state.add_observer(self)
-    self.turn_display = Banner(15, colors.BLACK)  # UI component for turn display
+    self.turn_display = Banner(15, colors.BLACK)
     
     self.font  = pygame.font.Font("./assets/regular.ttf", 15)
     self.Hfont = pygame.font.Font("./assets/rounded.ttf", 17)
@@ -195,16 +193,24 @@ class Ui:
     draw_token(colors.RED   , "fire"    )
     draw_token(colors.ORANGE, "neutral" )
 
+  def draw_buttons(self, SCREEN):
+    if self.game_state.attacking:
+      for button in self.attack_buttons:
+        button.draw(SCREEN)
+    elif self.game_state.moving:
+      print('movin')
+      self.cancel_btn.draw(SCREEN)
+    elif self.character is not False:
+      for button in self.character_buttons:
+        button.draw(SCREEN)
+
   def draw(self, SCREEN):
     self.current_turn.draw(SCREEN)
     self.turn_button.draw(SCREEN)
-    
     self.turn_banner.draw(SCREEN)
     
     if self.character:
       x, y, = (self.char_anchor["x"], self.char_anchor["y"])
-      # for element in self.character:
-      #   SCREEN.blit(element[0], element[1])
       self.draw_buttons(SCREEN)
       self.create_token_ui(self.character, x, y)
 
@@ -212,16 +218,5 @@ class Ui:
       info.update()
       if info.alpha == 0:
         self.infos.remove(info)
-
-  def draw_buttons(self, SCREEN):
-    if self.game_state.attacking:
-        for button in self.attack_buttons:
-            button.draw(SCREEN)
-    elif self.game_state.moving:
-        print('movin')
-        self.cancel_btn.draw(SCREEN)
-    elif self.character is not False:
-        for button in self.character_buttons:
-            button.draw(SCREEN)
 
             

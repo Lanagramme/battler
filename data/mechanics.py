@@ -1,24 +1,73 @@
 Mechanics = {}
 
+class Effect():
+  def cast():
+    raise NotImplementedError("Effects must implement 'apply()'")
+
+class Direct_damage(Effect):
+  def __init__(self, damage):
+    self.damage = damage
+
+  def cast(self, target):
+    if target and target.pion:
+      target.pion.loose_pv(self.damage)
+      print(f"{target.pion.character.name} -{self.damage} pv")
+
+class Add_token(Effect):
+  def __init__(self, element, qte):
+    self.element = element
+    self.qte = qte
+
+  def cast(self, target):
+    target.pion.character.add_tokens(self.element, self.qte)
+    print(f"{target.pion.character.name} +{self.qte} {self.element}, tokens")
+
+class Consume_token_and_hurt(Effect):
+  def __init__(self, element, damage, multiplicator = 1):
+    self.element = element
+    self.damage = damage * multiplicator
+
+  def cast(self, target):
+    if target and target.pion:
+      token = target.pion.character.tokens[self.element]
+      for _ in range(token):
+        target.pion.loose_pv(self.damage)
+        print(f"{target.pion.character.name} -{self.damage} pv")
+      target.pion.character.tokens[self.element] = 0
+
+
 def status_damage(name, damage, target):
   target.hp -= damage
-  print(f"{target.name} -{damage} pv")
-
-def direct_damage(name, damage, targets):
-  for target in targets:
-    if target is not None and target.pion is not None:
-      target.pion.loose_pv(damage)
-      print(f"{target.pion.character.name} -{damage} pv")
+  print(f"{target.pion.character.name} -{damage} pv")
 
 def add_token_to_all_targets(targets, element, qte):
   for x in targets:
     if x.pion:
       x.pion.character.add_tokens(element, qte)
 
+def add_token(target, element, qte):
+  target.pion.character.add_tokens(element, qte)
+
+def repeat_for_token(target, element, effect):
+  tokens = target.pion.character.token[element]
+  if tokens: 
+    for _ in range(tokens): 
+      effect
+
+def repeat_for_token_and_consume(target, element, effect):
+  tokens = target.pion.character.token[element]
+  if tokens: 
+    for _ in range(tokens): effect
+    target.pion.character.token[element] = 0
+
 def collision(damage, targets): 
   direct_damage("collision", damage, targets)
 
 def projection(grid, targets, origin, distance, contact_effect=collision):
+  grid = self.grid
+  targets = self.targets
+  origin = self.origin
+  distance = self.distance
   test = False
   """
     Pushes targets on a grid away from an origin point in specific directions (N, S, E, W) by a specified distance.
@@ -146,8 +195,12 @@ Frozen = status('Frozen', {"aura":{"water":3}}, 'wither', 2, 2, frozen_effect)
 # Frozen['pay_cost'] = default_cost
 
         
-Mechanics[ "direct_damage" ] = direct_damage
+
+Mechanics[ "Consume_token_and_hurt" ] = Consume_token_and_hurt
+Mechanics[ "Direct_damage" ] = Direct_damage
+# Mechanics[ "direct_damage" ] = direct_damage
+Mechanics[ "Add_token"     ] = Add_token
+# Mechanics[ "add_token_to_all_targets" ] = add_token_to_all_targets
 Mechanics[ "status_damage" ] = status_damage
-Mechanics[ "add_token_to_all_targets" ] = add_token_to_all_targets
 Mechanics[ "collision" ] = collision
 Mechanics[ "projection" ] = projection

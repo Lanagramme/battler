@@ -274,42 +274,42 @@ class Grid:
 
             # Fetch valid offsets for the AoE type
             if aoe_type == "circle":
-                offsets = [(-1, 0), (1, 0), (0, -1), (0, 1)]  # Cardinal directions
+              offsets = [(-1, 0), (1, 0), (0, -1), (0, 1)]  # Cardinal directions
             elif aoe_type == "line":
-                offsets = [(-distance, 0), (distance, 0), (0, -distance), (0, distance)]
+              offsets = [(-distance, 0), (distance, 0), (0, -distance), (0, distance)]
             else:
-                offsets = self.aoe_templates.get(aoe_type, {}).get(radius, [])
+              offsets = self.aoe_templates.get(aoe_type, {}).get(radius, [])
 
             for dx, dy in offsets:
-                neighbor = self.get_cell(current_cell.x + dx, current_cell.y + dy)
-                if neighbor and neighbor not in visited:
-                    visited.add(neighbor)
+              neighbor = self.get_cell(current_cell.x + dx, current_cell.y + dy)
+              if neighbor and neighbor not in visited:
+                visited.add(neighbor)
 
-                    if blocking and (neighbor.pion or neighbor.is_obstacle):
-                        area.add(neighbor)
-                        continue
+                if blocking and (neighbor.pion or neighbor.is_obstacle):
+                  # area.add(neighbor)
+                  continue
 
-                    area.add(neighbor)
-                    queue.append((neighbor, distance + 1))
+                area.add(neighbor)
+                queue.append((neighbor, distance + 1))
 
     # Mark the grid cells
     if area_type == 'prev':
-        self.prevision_aoe = area
-        for cell in self.prevision_aoe:
-            cell.prev = True
+      self.prevision_aoe = area
+      for cell in self.prevision_aoe:
+        cell.prev = True
     elif area_type in ['attack', 'move']:
-        self.aoe = area
-        for cell in self.aoe:
-            cell.area = area_type
+      self.aoe = area
+      for cell in self.aoe:
+        cell.area = area_type
 
   def generate_circle_template(self, radius):
-      """Generate a set of offsets for a circular AoE of a given radius."""
-      offsets = set()
-      for x in range(-radius, radius + 1):
-          for y in range(-radius, radius + 1):
-              if abs(x) + abs(y) <= radius:
-                  offsets.add((x, y))
-      return offsets
+    """Generate a set of offsets for a circular AoE of a given radius."""
+    offsets = set()
+    for x in range(-radius, radius + 1):
+      for y in range(-radius, radius + 1):
+        if abs(x) + abs(y) <= radius:
+          offsets.add((x, y))
+    return offsets
 
   def generate_line_template(self, radius):
       """Generate a set of offsets for a line AoE of a given radius."""

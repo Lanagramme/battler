@@ -11,14 +11,13 @@ from classes.character import Character
 spells = [Spells["Fireball"], Spells['Stream']]
 spells2 = [Spells["Splash"], Spells['Spark']]
 
+Girl  = Character('Girl' ,  2, 4, 3, './sprite_sheet/girl.png'  , spells,  ["bottom", "left", "right", "top"], 60, 60, -3)
+Touko = Character('Touko',  2, 4, 4, './sprite_sheet/past.png'  , spells,  ["bottom", "left", "right", "top"], 60, 60)
+Azure = Character('Azure', 12, 4, 3, './sprite_sheet/azure.png' , spells,  ["bottom", "left", "right", "top"], 60, 60, -6)
 Lance = Character('Lance', 12, 4, 5, './sprite_sheet/silver.png', spells2, ["bottom", "left", "right", "top"], 60, 60, -6)
-Girl  = Character('Girl' ,  2, 4, 3, './sprite_sheet/girl.png'  , spells, ["bottom", "left", "right", "top"], 60, 60, -3)
-Touko = Character('Touko',  2, 4, 4, './sprite_sheet/past.png'  , spells, ["bottom", "left", "right", "top"], 60, 60)
+Scott = Character('Scott', 12, 4, 5, './sprite_sheet/Scott.png' , spells,  ["bottom", "left", "right", "top"], 60, 60, -6)
+Green = Character('Green', 12, 4, 5, './sprite_sheet/green.png' , spells,  ["bottom", "left", "right", "top"], 60, 60, -6)
 
-
-Scott = Character('Scott', 12, 4, 5, './sprite_sheet/Scott.png' , spells, ["bottom", "left", "right", "top"], 60, 60, -6)
-Green = Character('Green', 12, 4, 5, './sprite_sheet/green.png' , spells, ["bottom", "left", "right", "top"], 60, 60, -6)
-Azure = Character('Azure', 12, 4, 3, './sprite_sheet/azure.png' , spells, ["bottom", "left", "right", "top"], 60, 60, -6)
 class BattleScene(Scene):
   def __init__(self, state):
     super().__init__()
@@ -34,18 +33,17 @@ class BattleScene(Scene):
 
   # Mouse Handling:
   # * Hover Mechanics:
-      # When the mouse hovers over the grid, detects the hovered cell and pion  
+      # When the mouse hovers over the grid, detects the hovered cell and pion
       # If hovering over an "attack" area, calculates and displays AoE using the spell's configuration.
   # * Click Handling:
-      # Executes attacks if in an "attack" area, applying spell effects and damage. 
+      # Executes attacks if in an "attack" area, applying spell effects and damage.
       # Handles movement logic when clicking on a "move" area.
       # Clears AoE indicators and active cells when clicking elsewhere.
-      
+
   # Dead characters are removed from the grid.
 
   def handle_events(self, events):
     attack_in_progress = self.battle.attacking
-    pygame.draw.rect(SCREEN, colors.BLACK, ((200,200), (50,50)))
 
     # handle ui buttons
     for event in events:
@@ -60,7 +58,6 @@ class BattleScene(Scene):
       self.ui.turn_button.handle_event(event)
 
     self.battle.kill_the_dead(self.grid)
-    
 
     if self.grid.active and self.grid.active.pion not in self.battle.LIST_PIONS:
       self.grid.deactivate(self.ui)
