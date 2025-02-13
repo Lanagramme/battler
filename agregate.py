@@ -6,11 +6,19 @@ def read_files_in_folder(folder_path):
     valid_extensions = {".py", ".txt", ".md"}  # add more as needed
     
     for root, _, files in os.walk(folder_path):
+        # Skip unwanted directories
+        if "env" in root.split(os.sep) or ".git" in root.split(os.sep):
+            continue
+        
         for file in files:
+            # Skip .git* files
+            if file.startswith(".git"):
+                continue
+            
             file_path = os.path.join(root, file)
+            _, ext = os.path.splitext(file_path)
             
             # Skip files that don't match our valid extensions
-            _, ext = os.path.splitext(file_path)
             if ext.lower() not in valid_extensions:
                 continue
             
@@ -18,14 +26,17 @@ def read_files_in_folder(folder_path):
                 with open(file_path, "r", encoding="utf-8") as f:
                     file_data[file_path] = f.read()
             except UnicodeDecodeError:
-                # If the file isn't actually UTF-8 encoded
                 print(f"Skipping file (not valid UTF-8): {file_path}")
-
+    
     return file_data
 
 if __name__ == "__main__":
     folder_path = "./"
     output_file = "output.json"
+    
+    # Remove output.json if it exists
+    if os.path.exists(output_file):
+        os.remove(output_file)
     
     files_content = read_files_in_folder(folder_path)
     

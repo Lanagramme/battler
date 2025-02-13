@@ -28,7 +28,6 @@ class Pion:
     print(f"tokens: {self.character.tokens}")
     print(f"position: {self.position}")
 
-      
 class Cell:
   def __init__(self, x, y, margin, gutter, size, hover, active, pion, turn):
     self.turn = turn
@@ -48,7 +47,7 @@ class Cell:
       (margin['left'] + x * (size + gutter), margin["top"] + y * (size + gutter)),
       self.dimensions,
     )
-    
+
   def coords(self):
     return ( self.x,self.y )
 
@@ -66,7 +65,7 @@ class Cell:
       pygame.draw.circle( SCREEN, pion_color, (self.body.centerx, self.body.centery), self.body.width / 2 - self.padding,)
       if self.pion.team == self.turn.turn:
         pygame.draw.rect(SCREEN, colors.RED, self.body, 3)
-      
+
 class Grid:
   def __init__(self, width, height, margin, gutter, size, state):
     self.margin = margin

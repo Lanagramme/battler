@@ -4,20 +4,20 @@ from utils.colors import colors
 from utils.constants import HEIGHT, WIDTH, SCREEN, MARGIN
 from classes.ui_components import Button, Banner, Fade, TurnBanner
 from patterns.observer import Observer
-    
+
 class Ui(Observer):
   def __init__(self, WIDTH, HEIGHT, game_state):
     self.game_state = game_state
     self.game_state.add_observer(self)
     self.turn_display = Banner(15, colors.BLACK)
-    
+
     self.font  = pygame.font.Font("./assets/regular.ttf", 15)
     self.Hfont = pygame.font.Font("./assets/rounded.ttf", 17)
     self.Bfont = pygame.font.Font("./assets/regular.ttf", 15)
     self.set_turn()
-    
+
     self.turn_banner = TurnBanner(self.game_state)
-    
+
     self.clear_aoe = False
     self.character = False
     self.turn_button = Button(

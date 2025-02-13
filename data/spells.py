@@ -11,6 +11,7 @@ class Spell:
     self.prevision_type = prevision_type
     self.effect = None
     self.effects = []
+    self.grid_effects = []
     self.blocking = blocking
 
   def define_effect(self, effect):
@@ -19,7 +20,10 @@ class Spell:
   def add_effect(self, effect):
     self.effects.append(effect)
 
-  def cast(self, caster, targets, grid):
+  def add_grid_effect(self, effect):
+    self.grid_effects.append(effect)
+
+  def cast(self, caster, targets, grid, *args):
     if not isinstance(targets, list):
       targets = [targets]
 
@@ -30,6 +34,10 @@ class Spell:
         if target and target.pion:
           for effect in self.effects:
             effect.cast(target)
+      if len(self.grid_effects):
+        for effect in self.grid_effects:
+          effect.cast(caster,targets,grid)
+
 
   def cast2(self, caster, targets, grid):
     print("================================================")
@@ -138,11 +146,10 @@ Spark.add_effect(Mechanics["Consume_token_and_hurt"]('fire', Spark_splinter.dama
 # apply status wet to targets
 Splash = Spell('Splash', 3, "line", 0, 3, "line", blocking=False)
 Splash.cost = {"tokens": {"neutral": 3}}
+Splash_projection = Mechanics['Projection'](3)
+Splash_projection.add_collision_effect(Mechanics['Direct_damage'](2))
 Splash.add_effect(Mechanics['Add_token']("water", 1))
-def splash_effect(target, grid):
-  Mechanics[ "add_token_to_all_targets" ](target, 'water', 1)
-  Mechanics[ "projection" ](grid, target, grid.hover, 3, Mechanics[ "collision" ])
-Splash.define_effect( splash_effect)
+Splash.add_grid_effect(Splash_projection)
 
 # ====== [ Frosw Wind ] ======
 
