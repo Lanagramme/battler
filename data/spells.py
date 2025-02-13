@@ -17,7 +17,7 @@ class Spell:
   def define_effect(self, effect):
     self.effect = effect
 
-  def add_effect(self, effect):
+  def add_target_effect(self, effect):
     self.effects.append(effect)
 
   def add_grid_effect(self, effect):
@@ -38,13 +38,6 @@ class Spell:
         for effect in self.grid_effects:
           effect.cast(caster,targets,grid)
 
-
-  def cast2(self, caster, targets, grid):
-    print("================================================")
-    print(f"Spell => {self.name}")
-    if self.attempt_cast(caster) :
-      self.effect(targets, grid)
-    
   def __repr__(self):
     return (f"Spell(name={self.name}, range={self.range}, aoe={self.aoe}, "
       f"damage={self.damage}, prevision_aoe={self.prevision_aoe}, "
@@ -84,25 +77,20 @@ class Spell:
         ressource_pool[element] -= required_value
     
     for stat, value in self.cost.items():
-      match(stat):
-        case "aura":
-          if not check_spell_cost('aura', caster.aura, value):
-            success = False
-        case "tokens":
-          if not check_spell_cost('tokens', caster.tokens, value):
-            success = False
-        case 'status':
-          if next((status for status in caster.status if status.get('name') == value), None) is  None:
-            print(f"{caster.name} must be under the status {value} to cast this spell")
-            success = False
-        case _:
-          print(stat)
-          if not stat in dir(caster):
-            print(f"Invalid ressource_pool '{stat}'")
-            success = False       
-          elif getattr(caster, stat, 0) < value:
-            print(f"Not enough {stat} : {value} needed, {getattr(caster, stat, 0)} availible")
-            success = False       
+      if stat == "aura":
+        success = check_spell_cost('aura', caster.aura, value)
+      elif stat == "tokens":
+        success = check_spell_cost('tokens', caster.tokens, value)
+      elif stat == "status":
+        success = any(status.get('name') == value for status in caster.status)
+        if not success: print(f"{caster.name} must be under the status {value} to cast this spell")
+      else:
+        if not stat in dir(caster):
+          print(f"Invalid ressource_pool '{stat}'")
+          success = False       
+        elif getattr(caster, stat, 0) < value:
+          print(f"Not enough {stat} : {value} needed, {getattr(caster, stat, 0)} availible")
+          success = False       
           
     if success:
       for stat, value in self.cost.items():
@@ -127,8 +115,8 @@ class Spell:
 # deal 2 damage and apply one fire token to target
 Fireball = Spell('Fireball', 8, "circle", 2)
 Fireball.cost = {"tokens": { "neutral": 2, "fire": 1}} 
-Fireball.add_effect(Mechanics[ "Direct_damage" ](Fireball.damage))
-Fireball.add_effect(Mechanics[ "Add_token" ]("fire", 1))
+Fireball.add_target_effect(Mechanics[ "Direct_damage" ](Fireball.damage))
+Fireball.add_target_effect(Mechanics[ "Add_token" ]("fire", 1))
 
 
 # ====== [ Spark ] ======
@@ -137,8 +125,8 @@ Fireball.add_effect(Mechanics[ "Add_token" ]("fire", 1))
 Spark = Spell('Spark', 3, "circle", 1, 2)
 Spark_splinter = Spell('Splinter', 1, None, 2)
 Spark.cost = {"tokens": { "neutral": 1, "fire": 1}} 
-Spark.add_effect(Mechanics["Direct_damage"](Spark.damage))
-Spark.add_effect(Mechanics["Consume_token_and_hurt"]('fire', Spark_splinter.damage))
+Spark.add_target_effect(Mechanics["Direct_damage"](Spark.damage))
+Spark.add_target_effect(Mechanics["Consume_token_and_hurt"]('fire', Spark_splinter.damage))
 
 # ====== [ Splash ] ======
 # push all targets 1m around to 3 m away
@@ -148,7 +136,7 @@ Splash = Spell('Splash', 3, "line", 0, 3, "line", blocking=False)
 Splash.cost = {"tokens": {"neutral": 3}}
 Splash_projection = Mechanics['Projection'](3)
 Splash_projection.add_collision_effect(Mechanics['Direct_damage'](2))
-Splash.add_effect(Mechanics['Add_token']("water", 1))
+Splash.add_target_effect(Mechanics['Add_token']("water", 1))
 Splash.add_grid_effect(Splash_projection)
 
 # ====== [ Frosw Wind ] ======
@@ -156,7 +144,7 @@ Splash.add_grid_effect(Splash_projection)
 # ====== [ Stream ] ======
 Stream = Spell('Stream', 4, "line", 3, 3)
 Stream.cost = {"mp": 2}
-Stream.add_effect(Mechanics[ "Direct_damage" ](Stream.damage))
+Stream.add_target_effect(Mechanics[ "Direct_damage" ](Stream.damage))
 
 Spells["Fireball"] = Fireball
 Spells["Spark"] = Spark

@@ -1,8 +1,8 @@
 Mechanics = {}
 
-class Effect():
-  def cast():
-    raise NotImplementedError("Effects must implement 'apply()'")
+class Effect:
+  def cast(self, *args):
+    raise NotImplementedError("Effects must implement 'cast()'")
 
 class Direct_damage(Effect):
   def __init__(self, damage):
@@ -18,7 +18,7 @@ class Collision(Effect):
     self.effects = []
     self.grid_effects = []
 
-  def add_effect(self, effect):
+  def add_target_effect(self, effect):
     self.effects.append(effect)
 
   def add_grid_effect(self, effect):
@@ -58,7 +58,7 @@ class Projection(Effect):
     self.distance = distance
 
   def add_collision_effect(self, effect):
-    self.contact_effect.add_effect(effect)
+    self.contact_effect.add_target_effect(effect)
 
   def cast(self, caster, targets, grid):
     test = False
