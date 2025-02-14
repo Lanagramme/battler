@@ -55,7 +55,7 @@ class Button:
 
 class ActionButton(Button):
   def __init__(self, x, y, text, action):
-    super(x, y, 100, 35, text, colors.BLUE, colors.DARK_BLUE, colors.BLACK, 25, action).__init__()
+    super().__init__(x, y, 100, 35, text, colors.BLUE, colors.DARK_BLUE, colors.BLACK, 25, action)
 
         
 class Banner:

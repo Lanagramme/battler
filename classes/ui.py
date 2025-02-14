@@ -50,8 +50,7 @@ class Ui(Observer):
 
     self.clear_aoe = False
     self.character = False
-    self.turn_button = ActionButton(WIDTH-15-100, 15, "Turn", action=self.game_state.next_turn)
-    # self.turn_button = Button(WIDTH-15-100, 15, 100, 35, "Turn", colors.BLUE, colors.DARK_BLUE, colors.BLACK, 25, action=self.game_state.next_turn)
+    self.turn_button = ActionButton(WIDTH-115, 15, "Turn", action=self.game_state.next_turn)
     self.character_buttons = []
     self.attack_buttons = []
 
