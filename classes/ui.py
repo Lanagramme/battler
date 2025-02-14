@@ -2,8 +2,38 @@ import pygame
 pygame.font.init()
 from utils.colors import colors
 from utils.constants import HEIGHT, WIDTH, SCREEN, MARGIN
-from classes.ui_components import Button, Banner, Fade, TurnBanner
+from classes.ui_components import ActionButton, Button, Banner, Fade, TurnBanner
 from patterns.observer import Observer
+from state.grid_state import GameStates 
+
+class UiManager(Observer):
+    def __init__(self, game_state):
+      self.game_state = game_state
+      self.game_state.add_observer(self)
+      self.current_ui_elements = []
+
+    def update(self, event, *args):
+      """React to state changes."""
+      if event == "STATE_CHANGED":
+        new_state = args[0]
+        print(f"UI Manager: Reacting to state -> {new_state}")
+        self.handle_state_change(new_state)
+      elif event == "TURN_CHANGED":
+        self.display_turn_banner(args[0], args[1])
+
+    def handle_state_change(self, new_state):
+      """Show or hide UI elements based on the game state."""
+      self.current_ui_elements.clear()
+
+      if new_state == GameStates.ATTACKING:
+        self.current_ui_elements.append(AttackUI())
+      elif new_state == GameStates.MOVING:
+        self.current_ui_elements.append(MovementUI())
+      elif new_state == GameStates.TURN_CHANGING:
+        self.display_turn_banner()
+
+    def display_turn_banner(self, team, turn_number):
+      print(f"Turn {turn_number}: {team}'s Turn!")
 
 class Ui(Observer):
   def __init__(self, WIDTH, HEIGHT, game_state):
@@ -20,13 +50,8 @@ class Ui(Observer):
 
     self.clear_aoe = False
     self.character = False
-    self.turn_button = Button(
-      WIDTH-15-100, 15, 
-      100, 35, 
-      "Turn", 
-      colors.BLUE, 
-      colors.DARK_BLUE, 
-      colors.BLACK, 25, action=self.game_state.next_turn)
+    self.turn_button = ActionButton(WIDTH-15-100, 15, "Turn", action=self.game_state.next_turn)
+    # self.turn_button = Button(WIDTH-15-100, 15, 100, 35, "Turn", colors.BLUE, colors.DARK_BLUE, colors.BLACK, 25, action=self.game_state.next_turn)
     self.character_buttons = []
     self.attack_buttons = []
 
@@ -39,12 +64,28 @@ class Ui(Observer):
     self.anchor = pygame.Rect(self.char_anchor["x"], self.char_anchor['y'], 400, MARGIN['bottom'])
     self.cancel_btn = Button(230, self.char_anchor['y'] + 15, 100, 35, "Cancel", colors.BLUE, colors.DARK_BLUE, colors.BLACK, 25, action=lambda: self.cancel_menu(game_state))
 
+  def handle_state_change(self, new_state, args):
+    if new_state == GameStates.ATTACKING:
+      self.show_attack_ui()
+    elif new_state == GameStates.MOVING:
+      self.show_movement_ui()
+    elif new_state == GameStates.TURN_CHANGING:
+      self.turn_banner.direction = "down"
+      # self.show_turn_banner()
+      # new_turn, turn_number = args
+      # self.turn_display.set_text(f"Turn: {new_turn} ({turn_number})")
+      # self.turn_display.set_color(self.game_state.TEAMS[new_turn]["color"])
+      pass
+    else:
+      # self.hide_all_ui()
+      pass
+
   def update(self, event, *args):
     """React to state changes."""
-    if event == "TURN_CHANGED":
-      new_turn, turn_number = args
-      self.turn_display.set_text(f"Turn: {new_turn} ({turn_number})")
-      self.turn_display.set_color(self.game_state.TEAMS[new_turn]["color"])
+    if event == "STATE_CHANGED":
+      new_state = args[0]
+      print(f"UI: Reacting to new state -> {new_state}")
+      self.handle_state_change(new_state, args)
       
   def character_info(self, x, y, color, info):
     fade = Fade(x, y, color, info)
