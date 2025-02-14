@@ -139,7 +139,6 @@ class BattleScene(Scene):
     # self.battle.fade_turn_pannel()
 
   def next_turn(self):
-    self.ui.set_turn()
     self.ui.character = False
     self.grid.deactivate(self.ui)
     self.grid.clean_aoe()

@@ -15,4 +15,5 @@ class Observable:
 class Observer:
     def update(self, event, *args):
         """Observers must implement this method to react to state changes."""
-        raise NotImplementedError("Observer subclasses must implement 'update()'")
+        print(self)
+        raise NotImplementedError("Observer subclasses  must implement 'update()'")

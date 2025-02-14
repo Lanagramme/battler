@@ -48,6 +48,8 @@ class State(Observable):
     """Updates the game state and notifies UI observers"""
     if self.current_state != new_state:
       self.current_state = new_state
+      for observer in self._observers:
+        print(observer)
       self.notify_observers("STATE_CHANGED", new_state)
 
 

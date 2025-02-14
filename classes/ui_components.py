@@ -81,69 +81,69 @@ class Banner:
     SCREEN.blit(text_surface, rect)
 
 class TurnBanner(Observer):
-    def __init__(self, game_state):
-        """Initialize TurnBanner as an observer of game_state"""
-        self.game_state = game_state
-        self.game_state.add_observer(self)  # Register as an observer
-        
-        self.font = pygame.font.Font(None, 80)
-        self.banner_surface = None
-        self.text_surface = None
-        self.visible = False  # Is the banner currently active?
-        self.timer = 60  # Time to stay visible (1 second at 60 FPS)
-        self.speed = 15  # Speed of sliding effect
+  def __init__(self, game_state):
+    """Initialize TurnBanner as an observer of game_state"""
+    self.game_state = game_state
+    self.game_state.add_observer(self)  # Register as an observer
+    
+    self.font = pygame.font.Font(None, 80)
+    self.banner_surface = None
+    self.text_surface = None
+    self.visible = False  # Is the banner currently active?
+    self.timer = 60  # Time to stay visible (1 second at 60 FPS)
+    self.speed = 15  # Speed of sliding effect
 
-        # Banner position (starts off-screen)
-        self.start_y = -100  # Above the screen
-        self.target_y = SCREEN.get_height() // 4  # Final position when sliding in
-        self.current_y = self.start_y  # Current Y position
-        self.direction = 'down'
+    # Banner position (starts off-screen)
+    self.start_y = -100  # Above the screen
+    self.target_y = SCREEN.get_height() // 4  # Final position when sliding in
+    self.current_y = self.start_y  # Current Y position
+    self.direction = 'down'
 
-        self.update_surface()  # Pre-generate surfaces
+    self.update_surface()  # Pre-generate surfaces
 
-    def update(self, event, *args):
-        """Triggered when the turn changes."""
-        if event == "TURN_CHANGED":
-            self.current_y = self.start_y  # Reset to off-screen position
-            self.timer = 60  # Stay visible for 1 second (60 frames at 60 FPS)
-            self.visible = True  # Activate the banner
-            self.update_surface()  # Refresh text and color
+  def update(self, event, *args):
+    """Triggered when the turn changes."""
+    if event == "TURN_CHANGED":
+      self.current_y = self.start_y  # Reset to off-screen position
+      self.timer = 60  # Stay visible for 1 second (60 frames at 60 FPS)
+      self.visible = True  # Activate the banner
+      self.update_surface()  # Refresh text and color
 
-    def update_surface(self):
-        """Creates the banner's surfaces only when needed."""
-        color = self.game_state.TEAMS[self.game_state.turn]["color"]
-        self.banner_surface = pygame.Surface((500, 100), pygame.SRCALPHA)
-        self.banner_surface.fill(color)
+  def update_surface(self):
+      """Creates the banner's surfaces only when needed."""
+      color = self.game_state.TEAMS[self.game_state.turn]["color"]
+      self.banner_surface = pygame.Surface((500, 100), pygame.SRCALPHA)
+      self.banner_surface.fill(color)
 
-        message = f"Turn: {self.game_state.turn}"
-        self.text_surface = self.font.render(message, True, colors.BLACK)
+      message = f"Turn: {self.game_state.turn}"
+      self.text_surface = self.font.render(message, True, colors.BLACK)
 
-    def draw(self, screen):
-        """Handles slide in, wait, and slide out animation."""
-        if not self.visible:
-            return  # Skip drawing if not active
+  def draw(self, screen):
+      """Handles slide in, wait, and slide out animation."""
+      if not self.visible:
+          return  # Skip drawing if not active
 
-        # Slide in
-        if self.current_y < self.target_y and self.direction == 'down':
-            self.current_y += self.speed
-            if self.current_y > self.target_y:  # Prevent overshooting
-                self.current_y = self.target_y
+      # Slide in
+      if self.current_y < self.target_y and self.direction == 'down':
+          self.current_y += self.speed
+          if self.current_y > self.target_y:  # Prevent overshooting
+              self.current_y = self.target_y
 
-        # Countdown for staying visible
-        elif self.timer > 0:
-          self.direction = "up"
-          self.timer -= 1  # Countdown in frames (1 second at 60 FPS)
+      # Countdown for staying visible
+      elif self.timer > 0:
+        self.direction = "up"
+        self.timer -= 1  # Countdown in frames (1 second at 60 FPS)
 
-        # Slide out
-        else:
-            self.current_y -= self.speed
-            if self.current_y <= self.start_y:  # Fully off-screen
-                self.visible = False  # Hide banner
+      # Slide out
+      else:
+          self.current_y -= self.speed
+          if self.current_y <= self.start_y:  # Fully off-screen
+              self.visible = False  # Hide banner
 
-        # Center the banner horizontally
-        banner_rect = self.banner_surface.get_rect(center=(SCREEN.get_width() // 2, self.current_y))
-        text_rect = self.text_surface.get_rect(center=banner_rect.center)
+      # Center the banner horizontally
+      banner_rect = self.banner_surface.get_rect(center=(SCREEN.get_width() // 2, self.current_y))
+      text_rect = self.text_surface.get_rect(center=banner_rect.center)
 
-        # Draw banner and text
-        screen.blit(self.banner_surface, banner_rect)
-        screen.blit(self.text_surface, text_rect)
+      # Draw banner and text
+      screen.blit(self.banner_surface, banner_rect)
+      screen.blit(self.text_surface, text_rect)
